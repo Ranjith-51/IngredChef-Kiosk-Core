@@ -518,7 +518,7 @@
         }
 
         // ==========================================
-        // 💳 UPDATED MODULE: SECURE QR TRANSACTION LAYER
+        // 💳 SECURE QR TRANSACTION LAYER
         // ==========================================
         function loadTransactionScreenOverlay() {
             if (!activeCustomer) return alert("Link profile parameters before initiating payment logic.");
@@ -529,17 +529,14 @@
 
             document.getElementById('checkout-amount-display').textContent = `₹${grandTotal}`;
             
-            // Generate clean embedded dynamic web checkout string links
             const qrContainer = document.getElementById('qr-target-container');
             const gatewayString = `upi://pay?pa=ingredchef@bank&pn=IngredChefFoodCourt&am=${grandTotal}&cu=INR&tn=KioskOrder`;
             qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(gatewayString)}" style="border:4px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.1); border-radius:8px;">`;
 
-            // Reset modal screen views back to payment processing stance
             document.getElementById('payment-step-qr').classList.remove('hidden');
             document.getElementById('payment-step-success').classList.add('hidden');
             document.getElementById('checkout-gateway-modal').classList.remove('hidden');
 
-            // Build structural staging transaction token payload mapping split items strictly to individual stalls
             const generatedOrderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
             const splitStalls = {};
             
@@ -548,21 +545,18 @@
                 splitStalls[c.stallName].push({ name: c.name, qty: c.quantity, customizations: c.customizations });
             });
 
-            // 🚀 STRATEGIC ORDERED ENHANCEMENT: Extract sequential unique structural stall tokens chronologically
             const segments = Object.keys(splitStalls).map(stallKey => {
                 if (!currentStallSequences[stallKey]) {
-                    // Failover fallback descriptor if custom stall lacks specific prefix parameters
-                    currentStallSequences[stallKey] = { prefix: stallKey.substring(0,2).toUpperCase(), seq: 1 };
+                    currentStallSequences[stallKey] = { prefix: stallKey.substring(0,2).toUpperCase(), seq: 0 };
                 }
                 
-                // Advance specific configuration token sequences chronologically
                 currentStallSequences[stallKey].seq += 1;
                 const formattedSequenceNumber = String(currentStallSequences[stallKey].seq).padStart(3, '0');
                 const uniqueStallTokenId = `${currentStallSequences[stallKey].prefix}-${formattedSequenceNumber}`;
 
                 return {
                     stallName: stallKey,
-                    stallTokenId: uniqueStallTokenId, // Imjected unique sequential token bound explicitly to this station
+                    stallTokenId: uniqueStallTokenId, 
                     items: splitStalls[stallKey],
                     etaMinutes: null,
                     dismissed: false
@@ -573,7 +567,7 @@
 
             activeStagingPayload = {
                 orderId: generatedOrderId,
-                tokenNumber: segments.map(s => s.stallTokenId).join(', '), // Aggregated trace label display for historical logging
+                tokenNumber: segments.map(s => s.stallTokenId).join(', '), 
                 customerName: activeCustomer.name,
                 customerPhone: activeCustomer.phone,
                 epochIssued: Date.now(),
@@ -585,7 +579,6 @@
         function triggerPaymentVerificationFlow() {
             if (!activeStagingPayload) return;
 
-            // Render modern digital unique receipt matrix block details
             const stackContainer = document.getElementById('generated-tokens-stack');
             stackContainer.innerHTML = '';
 
@@ -603,7 +596,6 @@
                 stackContainer.appendChild(tokenBox);
             });
 
-            // Transition interfaces
             document.getElementById('payment-step-qr').classList.add('hidden');
             document.getElementById('payment-step-success').classList.remove('hidden');
         }
@@ -617,13 +609,12 @@
             if (isSupabaseConfigured) {
                 try {
                     await dbClient.from('orders').insert([activeStagingPayload]);
-                } catch (err) { console.warn("Supabase transmission deferred. Operating local sync state metrics.", err); }
+                } catch (err) { console.warn("Supabase transmission deferred.", err); }
             }
 
             updateHistoryDashboardUI();
             document.getElementById('checkout-gateway-modal').classList.add('hidden');
             
-            // Erase transaction containers safely
             cart = [];
             activeStagingPayload = null;
             renderBasketUI();
@@ -663,18 +654,24 @@
                 { name: "The Spud Shack & Grill", prefix: "SP", secret: "spud123" }
             ];
             
+            // FIXED: Scan explicit browser memory arrays first to ensure custom creations are saved
+            const savedStalls = JSON.parse(localStorage.getItem('allStallsRegistry'));
+            
             if (isSupabaseConfigured) {
                 try {
                     let { data, error } = await dbClient.from('stalls').select('*');
-                    window.cachedStalls = (error || !data || data.length === 0) ? defaultStalls : data;
-                } catch { window.cachedStalls = defaultStalls; }
-            } else { window.cachedStalls = defaultStalls; }
+                    window.cachedStalls = (error || !data || data.length === 0) ? (savedStalls || defaultStalls) : data;
+                } catch { window.cachedStalls = savedStalls || defaultStalls; }
+            } else { 
+                window.cachedStalls = savedStalls || defaultStalls; 
+            }
             
             foodCourtStalls = window.cachedStalls.map(s => s.name);
             const select = document.getElementById('stall-selector');
             if (select) select.innerHTML = '<option value="ALL">-- ALL SYSTEMS ONLINE --</option>' + window.cachedStalls.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
         }
 
+        // FIXED: Authenticate directly from the updated dynamic cache layer array registry
         function processKdsSecurityAccessCheck() {
             const user = document.getElementById('auth-username').value.trim();
             const pass = document.getElementById('auth-password').value.trim();
@@ -684,6 +681,7 @@
                 activeUserSession = { username: "System Admin", role: "admin" };
                 finishAuthenticationRedirect(); return;
             }
+            
             const match = (window.cachedStalls || []).find(s => s.name.toLowerCase() === user.toLowerCase() && s.secret === pass);
             if (match) {
                 activeUserSession = { username: match.name, role: "stall" };
@@ -719,7 +717,7 @@
                         renderKDSTicketsGrid();
                         if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
                     }).subscribe();
-                } catch(e) { console.log("Realtime socket execution streaming over native layers.", e); }
+                } catch(e) { console.log(e); }
             }
             renderKDSTicketsGrid();
         }
@@ -790,7 +788,7 @@
             const items = globalStallMenus[stallName] || [];
 
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom menu catalog objects compiled yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom menu items built yet. Items added here will instantly appear on the customer kiosk when they search or click categories.</td></tr>`;
                 return;
             }
 
@@ -814,9 +812,6 @@
             });
         }
 
-        // ==========================================
-        // 🍳 KDS DISPLAY PIPELINE RENDER ENGINE
-        // ==========================================
         function renderKDSTicketsGrid() {
             const filter = activeUserSession?.role === 'admin' ? document.getElementById('stall-selector').value : activeUserSession?.username;
             const pBox = document.getElementById('queue-pending'); const rBox = document.getElementById('queue-ready');
@@ -858,6 +853,12 @@
             (window.cachedStalls || []).forEach(s => {
                 const div = document.createElement('div'); div.className = "vendor-row";
                 div.innerHTML = `<span>🏪 ${s.name} [<strong>${s.prefix || '??'}</strong>]</span> <button class="vendor-del-btn">Revoke</button>`;
+                div.querySelector('.vendor-del-btn').onclick = () => {
+                    window.cachedStalls = window.cachedStalls.filter(st => st.name !== s.name);
+                    localStorage.setItem('allStallsRegistry', JSON.stringify(window.cachedStalls));
+                    fetchOperationalStallData();
+                    renderAdminVendorListUI();
+                };
                 container.appendChild(div);
             });
         }
@@ -875,6 +876,7 @@
             });
         }
 
+        // FIXED: Provision empty initialization arrays alongside storage pushes to preserve runtime mutations
         async function registerNewVendorStall() {
             const name = document.getElementById('new-stall-name').value.trim();
             const prefix = document.getElementById('new-stall-prefix').value.trim().toUpperCase();
@@ -882,10 +884,19 @@
             if (!name || !prefix || !secret) return alert("Fill fields entirely.");
             
             window.cachedStalls.push({ name, prefix, secret });
+            localStorage.setItem('allStallsRegistry', JSON.stringify(window.cachedStalls));
+            
+            if (!globalStallMenus[name]) {
+                globalStallMenus[name] = [];
+                localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
+            }
+            
             currentStallSequences[name] = { prefix: prefix, seq: 0 };
             localStorage.setItem('currentStallSequences', JSON.stringify(currentStallSequences));
             
+            await fetchOperationalStallData();
             renderAdminVendorListUI();
+            
             document.getElementById('new-stall-name').value = '';
             document.getElementById('new-stall-prefix').value = '';
             document.getElementById('new-stall-password').value = '';
