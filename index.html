@@ -8,9 +8,11 @@
 </head>
 <body>
 
+    <!-- 🚪 CENTRAL GATEWAY SCREEN -->
     <div id="view-gateway" class="gateway-screen">
         <div class="gateway-card">
-            <img src="IngredChef_Logo.png" style="width:140px; height:140px; border-radius:50%; margin-bottom:15px; object-fit:cover;">
+            <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" style="width: 140px; height: auto; display: block; margin: 0 auto 15px auto;">
+            <div style="width:140px; height:140px; border-radius:50%; margin:0 auto 15px auto; background:#34495e; display:flex; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold;">👨‍🍳</div>
             <h2>Welcome to IngredChef</h2>
             <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace Interface</p>
             
@@ -20,6 +22,7 @@
         </div>
     </div>
 
+    <!-- 🔐 KITCHEN PORTAL AUTHENTICATION MODAL -->
     <div id="kds-auth-screen" class="auth-overlay hidden">
         <div class="auth-card">
             <h3 style="margin-top:0; color:#2c3e50;">🔒 KDS Security Gateway</h3>
@@ -34,6 +37,7 @@
         </div>
     </div>
 
+    <!-- 🛒 VIEW STATE A: CUSTOMER ORDERING KIOSK INTERFACE -->
     <div id="view-customer-kiosk" class="hidden">
         <header class="app-header">
             <div style="display:flex; align-items:center; gap:15px;">
@@ -103,19 +107,22 @@
         </div>
     </div>
 
+    <!-- 🍳 VIEW STATE B: KITCHEN DISPLAY SYSTEM (KDS) & ADMINISTRATION PANEL -->
     <div id="view-kitchen-hub" class="hidden">
         <header class="app-header" style="background:#2c3e50;">
             <div style="display:flex; align-items:center; gap:15px;">
                 <button class="exit-workspace-btn" style="background:#e74c3c;" id="hub-logout-btn">← Logout</button>
                 <h1 style="color:white; margin:0; font-size:1.4rem;">IngredChef Kitchen Hub</h1>
             </div>
-            <div>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <button class="exit-workspace-btn" style="background:#34495e;" id="hub-to-kiosk-shortcut-btn">Go To Kiosk Kiosk 🛒</button>
                 <span id="active-session-identity" class="session-user-badge">Connecting Stream...</span>
             </div>
         </header>
 
         <div style="padding:30px; max-width:1600px; margin:0 auto;">
             
+            <!-- 🛠️ MERCHANDISE MENU MANAGER (Visible only to authenticated individual stalls) -->
             <section id="stall-menu-manager" class="admin-dashboard hidden" style="background: white; border-color: #3498db;">
                 <h3 style="color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 5px;">📋 Isolated Menu Customizer Portal</h3>
                 <p id="current-stall-display" style="font-weight: bold; color: #7f8c8d; font-size: 0.9rem; margin-bottom: 15px;"></p>
@@ -168,6 +175,7 @@
                 </div>
             </section>
 
+            <!-- ADMIN BACKOFFICE OPTIONS PANEL -->
             <section id="central-admin-view" class="admin-dashboard hidden">
                 <h2 style="color: #2c3e50; border-bottom:3px solid #34495e; padding-bottom:8px; margin-top:0;">💎 System Master Control Node</h2>
                 <div class="vendor-manager-grid">
@@ -205,6 +213,7 @@
                 </div>
             </section>
 
+            <!-- OPERATION RAILS KDS DESK -->
             <section id="kitchen-display-view">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="color:#2c3e50; margin:0;">🍳 Kitchen Ticket Stream Dispatch Engine</h2>
@@ -228,6 +237,7 @@
         </div>
     </div>
 
+    <!-- MODAL WINDOW INJECTIONS -->
     <div id="recipe-modal" class="modal-backdrop hidden">
         <div class="modal-card">
             <button id="close-modal-btn" class="modal-close-x">&times;</button>
@@ -242,23 +252,36 @@
         </div>
     </div>
 
+    <!-- AUTOMATION SDK IMPLEMENTATIONS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // --- CENTRAL SUPABASE API KEY REGISTRATION ---
         const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co/rest/v1/"; 
         const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
-        const dbClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_ANON);
+        
+        let dbClient = null;
+        let isSupabaseConfigured = false;
 
-        // Application Memory Global State Metrics
+        // Try to safe-initialize Supabase without locking execution threads
+        try {
+            if (SUPABASE_PROJECT_URL && !SUPABASE_PROJECT_URL.includes("your-project-id")) {
+                dbClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_ANON);
+                isSupabaseConfigured = true;
+                console.log("Supabase engine synchronized successfully.");
+            }
+        } catch(e) {
+            console.warn("Supabase configuration placeholder detected. Operating via Local State bridge mode.");
+        }
+
+        // Shared Runtime State Arrays (Preserved in LocalStorage fallback layers)
         let cart = [];
         let activeCustomer = null;
         let foodCourtStalls = [];
-        let orderHistory = [];
-        let globalCachedOrders = [];
-        let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
         
-        // Custom Self-Managed Menus Cache State Matrix
+        // Load data or fall back to synchronized local arrays across components
+        let globalCachedOrders = JSON.parse(localStorage.getItem('globalCachedOrders')) || [];
         let globalStallMenus = JSON.parse(localStorage.getItem('globalStallMenus')) || {};
+        let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             // SPA View Router Controls
@@ -267,6 +290,10 @@
             document.getElementById('auth-cancel-btn').addEventListener('click', () => document.getElementById('kds-auth-screen').classList.add('hidden'));
             document.getElementById('auth-login-btn').addEventListener('click', processKdsSecurityAccessCheck);
             document.getElementById('exit-kiosk-btn').addEventListener('click', returnToMainGateway);
+            document.getElementById('hub-to-kiosk-shortcut-btn').addEventListener('click', () => {
+                document.getElementById('view-kitchen-hub').classList.add('hidden');
+                launchCustomerWorkspaceView();
+            });
 
             // Kiosk Operational Bindings
             document.getElementById('register-cust-btn').addEventListener('click', saveCustomerSessionProfile);
@@ -274,7 +301,7 @@
             document.getElementById('checkout-btn').addEventListener('click', transmitCompletedBillToCloud);
             document.getElementById('clear-kiosk-btn').addEventListener('click', resetKioskTerminalState);
             
-            // Close button overlay definitions
+            // Close overlays bindings
             document.getElementById('close-modal-btn').addEventListener('click', () => document.getElementById('recipe-modal').classList.add('hidden'));
             document.getElementById('close-invoice-btn').addEventListener('click', () => document.getElementById('invoice-modal').classList.add('hidden'));
 
@@ -286,7 +313,7 @@
             document.getElementById('add-addon-row-btn').addEventListener('click', addNewAddonInputRow);
             document.getElementById('menu-item-form').addEventListener('submit', commitNewCustomMenuItemForm);
 
-            // Category quick browse dynamic triggers
+            // Category browsing logic binds
             document.querySelectorAll('.category-card').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.category-card').forEach(b => b.classList.remove('active'));
@@ -296,7 +323,7 @@
                 });
             });
 
-            // Initialize operational environment configurations
+            // Initialize configuration mappings
             await fetchOperationalStallData();
             if (activeUserSession) {
                 document.getElementById('view-gateway').classList.add('hidden');
@@ -319,20 +346,24 @@
             document.getElementById('view-gateway').classList.add('hidden');
             document.getElementById('view-customer-kiosk').classList.remove('hidden');
             
-            try {
-                let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false }).limit(15);
-                orderHistory = data || [];
-            } catch { orderHistory = []; }
-            updateHistoryDashboardUI();
+            if (isSupabaseConfigured) {
+                try {
+                    let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false }).limit(15);
+                    if (data) globalCachedOrders = data;
+                } catch(e) { console.log(e); }
 
-            dbClient.channel('kiosk-view-sync').on('postgres_changes', { event: '*', table: 'orders' }, payload => {
-                if (payload.eventType === 'INSERT') orderHistory.unshift(payload.new);
-                if (payload.eventType === 'UPDATE') {
-                    const idx = orderHistory.findIndex(o => o.orderId === payload.new.orderId);
-                    if (idx !== -1) orderHistory[idx] = payload.new;
-                }
-                updateHistoryDashboardUI();
-            }).subscribe();
+                dbClient.channel('kiosk-view-sync').on('postgres_changes', { event: '*', table: 'orders' }, payload => {
+                    if (payload.eventType === 'INSERT') globalCachedOrders.unshift(payload.new);
+                    if (payload.eventType === 'UPDATE') {
+                        const idx = globalCachedOrders.findIndex(o => o.orderId === payload.new.orderId);
+                        if (idx !== -1) globalCachedOrders[idx] = payload.new;
+                    }
+                    localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
+                    updateHistoryDashboardUI();
+                }).subscribe();
+            }
+            
+            updateHistoryDashboardUI();
         }
 
         function saveCustomerSessionProfile() {
@@ -358,7 +389,7 @@
             
             let combinedResults = [];
 
-            // 1. Gather matching records from Custom Self-Managed Stall Inventories
+            // 1. Gather custom local stall products
             Object.keys(globalStallMenus).forEach(stallName => {
                 globalStallMenus[stallName].forEach(item => {
                     if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
@@ -369,13 +400,13 @@
                             strMealThumb: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
                             customCost: item.price,
                             customStall: stallName,
-                            customAddons: item.addons
+                            customAddons: item.addons || []
                         });
                     }
                 });
             });
 
-            // 2. Query fallback structural external Public MealDB API logs
+            // 2. Load Fallback public recipes
             try {
                 let res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(term)}`);
                 let data = await res.json();
@@ -401,7 +432,7 @@
                         });
                     });
                 }
-            } catch { console.warn("External dictionary offline. Parsing self-managed logs only."); }
+            } catch { console.warn("External dictionary offline."); }
 
             if (combinedResults.length === 0) return msg.textContent = "❌ Zero matches located. Try alternative categories.";
             msg.textContent = `🍟 Loaded ${combinedResults.length} listings for "${term}":`;
@@ -426,7 +457,7 @@
         function triggerCustomizationModal(meal) {
             const body = document.getElementById('modal-body');
             
-            let addonsHTML = meal.customAddons.map((addon, index) => `
+            let addonsHTML = (meal.customAddons || []).map((addon, index) => `
                 <div style="margin-bottom:8px;">
                     <input type="checkbox" class="modal-addon-checkbox" data-name="${addon.name}" data-price="${addon.price}" id="addon-cb-${index}">
                     <label for="addon-cb-${index}">${addon.name} (+₹${addon.price})</label>
@@ -492,7 +523,7 @@
 
         async function transmitCompletedBillToCloud() {
             if (!activeCustomer) return alert("Register profile data prior to checking out.");
-            if (cart.length === 0) return alert("Basket Empty.");
+            if (cart.length === 0) return alert("Your basket is empty.");
 
             const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
             const token = Math.floor(10 + Math.random() * 89);
@@ -507,14 +538,23 @@
             const segments = Object.keys(splitStalls).map(k => ({ stallName: k, items: splitStalls[k], etaMinutes: null, dismissed: false }));
             const payload = { orderId, tokenNumber: token, customerName: activeCustomer.name, customerPhone: activeCustomer.phone, epochIssued: Date.now(), stalls: segments, grandTotal: total };
 
-            try {
-                const { error } = await dbClient.from('orders').insert([payload]);
-                if (error) throw error;
-                triggerReceiptUI(payload); cart = []; renderBasketUI();
-            } catch (err) {
-                console.warn("Supabase transmission deferred. Simulating local token verification:", err);
-                triggerReceiptUI(payload); cart = []; renderBasketUI();
+            // Core State Array Injection Logic
+            globalCachedOrders.unshift(payload);
+            localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
+
+            if (isSupabaseConfigured) {
+                try {
+                    await dbClient.from('orders').insert([payload]);
+                } catch (err) {
+                    console.warn("Supabase transaction deferred. Operating on local memory states.", err);
+                }
             }
+
+            // Sync the local state instantly to layout views
+            updateHistoryDashboardUI();
+            triggerReceiptUI(payload); 
+            cart = []; 
+            renderBasketUI();
         }
 
         function triggerReceiptUI(order) {
@@ -529,8 +569,11 @@
 
         function updateHistoryDashboardUI() {
             const body = document.getElementById('history-log-table-body'); body.innerHTML = '';
-            if (!orderHistory.length) body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px; color:#7f8c8d;">No historical tokens.</td></tr>';
-            orderHistory.slice(0,8).forEach(o => {
+            if (!globalCachedOrders || !globalCachedOrders.length) {
+                body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px; color:#7f8c8d;">No historical tokens.</td></tr>';
+                return;
+            }
+            globalCachedOrders.slice(0,8).forEach(o => {
                 const row = document.createElement('tr'); row.style.borderBottom = "1px solid #eee";
                 row.innerHTML = `<td style="padding:5px;">${new Date(o.epochIssued).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td>
                                  <td style="padding:5px; font-weight:bold; color:#e67e22;">#${o.tokenNumber}</td>
@@ -557,14 +600,15 @@
                 { name: "Bella Italia Pasta Counter", secret: "pasta123" },
                 { name: "The Spud Shack & Grill", secret: "spud123" }
             ];
-            try {
-                if (SUPABASE_PROJECT_URL.includes("your-project-id")) {
-                    window.cachedStalls = defaultStalls;
-                } else {
+            
+            if (isSupabaseConfigured) {
+                try {
                     let { data, error } = await dbClient.from('stalls').select('*');
                     window.cachedStalls = (error || !data || data.length === 0) ? defaultStalls : data;
-                }
-            } catch { window.cachedStalls = defaultStalls; }
+                } catch { window.cachedStalls = defaultStalls; }
+            } else {
+                window.cachedStalls = defaultStalls;
+            }
             
             foodCourtStalls = window.cachedStalls.map(s => s.name);
             const select = document.getElementById('stall-selector');
@@ -600,20 +644,27 @@
         }
 
         async function establishKitchenRealtimeSocketPipe() {
-            try {
-                let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false });
-                globalCachedOrders = data || [];
-                dbClient.channel('kds-stream-sync').on('postgres_changes', { event: '*', table: 'orders' }, payload => {
-                    if (payload.eventType === 'INSERT') globalCachedOrders.unshift(payload.new);
-                    if (payload.eventType === 'UPDATE') {
-                        const idx = globalCachedOrders.findIndex(o => o.orderId === payload.new.orderId);
-                        if (idx !== -1) globalCachedOrders[idx] = payload.new;
+            if (isSupabaseConfigured) {
+                try {
+                    let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false });
+                    if (data) {
+                        globalCachedOrders = data;
+                        localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
                     }
-                    if (payload.eventType === 'DELETE') globalCachedOrders = globalCachedOrders.filter(o => o.orderId !== payload.old.orderId);
-                    renderKDSTicketsGrid();
-                    if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
-                }).subscribe();
-            } catch { console.log("Realtime system streams running via simulation failover mapping."); }
+                    
+                    dbClient.channel('kds-stream-sync').on('postgres_changes', { event: '*', table: 'orders' }, payload => {
+                        if (payload.eventType === 'INSERT') globalCachedOrders.unshift(payload.new);
+                        if (payload.eventType === 'UPDATE') {
+                            const idx = globalCachedOrders.findIndex(o => o.orderId === payload.new.orderId);
+                            if (idx !== -1) globalCachedOrders[idx] = payload.new;
+                        }
+                        if (payload.eventType === 'DELETE') globalCachedOrders = globalCachedOrders.filter(o => o.orderId !== payload.old.orderId);
+                        localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
+                        renderKDSTicketsGrid();
+                        if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
+                    }).subscribe();
+                } catch(e) { console.log("Realtime system socket streaming over local variables layers.", e); }
+            }
             renderKDSTicketsGrid();
         }
 
@@ -627,6 +678,7 @@
             if (activeUserSession.role === 'admin') {
                 document.getElementById('central-admin-view').classList.remove('hidden');
                 menuManager.classList.add('hidden');
+                document.getElementById('stall-selector').disabled = false;
                 renderAdminVendorListUI(); renderAdminHistoryTableUI();
             } else {
                 document.getElementById('central-admin-view').classList.add('hidden');
@@ -640,7 +692,7 @@
         }
 
         // =======================================================
-        // 🛠️ NEW SUBSYSTEM: ISOLATED STALL MENU MANAGEMENT CONTROLS
+        // 🛠️ MENU MANAGEMENT SUBSYSTEM CONTROLS
         // =======================================================
         function addNewAddonInputRow() {
             const container = document.getElementById('addons-container');
@@ -690,7 +742,6 @@
 
             localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
             
-            // Clear current form inputs
             document.getElementById('menu-item-form').reset();
             document.getElementById('addons-container').innerHTML = '';
             renderStallSpecificInventoryTable(activeUserSession.username);
@@ -730,14 +781,14 @@
         // KDS TICKET SCREEN GENERATORS
         // ==========================================
         function renderKDSTicketsGrid() {
-            const filter = activeUserSession.role === 'admin' ? document.getElementById('stall-selector').value : activeUserSession.username;
+            const filter = activeUserSession?.role === 'admin' ? document.getElementById('stall-selector').value : activeUserSession?.username;
             const pBox = document.getElementById('queue-pending'); const rBox = document.getElementById('queue-ready');
             if(!pBox || !rBox) return;
             pBox.innerHTML = ''; rBox.innerHTML = ''; let pC = 0, rC = 0;
 
             globalCachedOrders.forEach(order => {
                 order.stalls.forEach(s => {
-                    if (filter !== "ALL" && s.stallName !== filter) return;
+                    if (filter && filter !== "ALL" && s.stallName !== filter) return;
                     if (s.dismissed) return;
                     const isDone = s.etaMinutes !== null;
                     
@@ -747,14 +798,22 @@
                         <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#7f8c8d;"><strong>${order.orderId}</strong> <span>${new Date(order.epochIssued).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
                         <small style="color:#7f8c8d; font-weight:bold;">🏪 ${s.stallName}</small><h4 style="margin:5px 0;">👤 ${order.customerName}</h4>
                         <div style="background:#2c3e50; color:white; padding:3px 6px; border-radius:4px; font-weight:900; width:fit-content; margin:5px 0;">TOKEN #${order.tokenNumber}</div>
-                        <ul style="padding-left:15px; margin:5px 0; font-size:0.85rem;">${s.items.map(i => `<li><strong>${i.qty}x</strong> ${i.name} ${i.customizations.length?`<br><small style="color:#e67e22;">➔ ${i.customizations.join(', ')}</small>`:''}</li>`).join('')}</ul>
+                        <ul style="padding-left:15px; margin:5px 0; font-size:0.85rem;">${s.items.map(i => `<li><strong>${i.qty}x</strong> ${i.name} ${(i.customizations || []).length?`<br><small style="color:#e67e22;">➔ ${i.customizations.join(', ')}</small>`:''}</li>`).join('')}</ul>
                         <button style="background:${isDone?'#95a5a6':'#2ecc71'}; color:white; border:none; width:100%; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer; margin-top:8px;">${isDone?'Clear Board':'Mark Completed'}</button>`;
                     
                     card.querySelector('button').onclick = async () => {
                         s.dismissed = isDone;
                         if (!isDone) s.etaMinutes = 0;
+                        
+                        // Update storage array
+                        localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
                         renderKDSTicketsGrid();
-                        await dbClient.from('orders').update({ stalls: order.stalls }).eq('orderId', order.orderId);
+                        
+                        if (isSupabaseConfigured) {
+                            try {
+                                await dbClient.from('orders').update({ stalls: order.stalls }).eq('orderId', order.orderId);
+                            } catch(e) { console.log("Local collection state mutation fallback direct.", e); }
+                        }
                     };
                     if (isDone) { rBox.appendChild(card); rC++; } else { pBox.appendChild(card); pC++; }
                 });
@@ -790,13 +849,22 @@
             if (!name || !secret) return alert("Fill fields completely.");
             window.cachedStalls.push({name, secret});
             renderAdminVendorListUI();
-            await dbClient.from('stalls').insert([{ name, secret }]);
+            
+            if (isSupabaseConfigured) {
+                try { await dbClient.from('stalls').insert([{ name, secret }]); } catch(e){}
+            }
         }
 
         async function adminClearGlobalDataLog() {
             if (confirm("Permanently purge operational history records?")) {
-                globalCachedOrders = []; renderKDSTicketsGrid(); renderAdminHistoryTableUI();
-                await dbClient.from('orders').delete().neq('orderId', 'WIPE_CMD');
+                globalCachedOrders = []; 
+                localStorage.setItem('globalCachedOrders', JSON.stringify([]));
+                renderKDSTicketsGrid(); 
+                if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
+                
+                if (isSupabaseConfigured) {
+                    try { await dbClient.from('orders').delete().neq('orderId', 'WIPE_CMD'); } catch(e){}
+                }
             }
         }
 
