@@ -5,32 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IngredChef Kiosk Hub</title>
     
+    <!-- Tab Logo Icon -->
     <link rel="icon" type="image/png" href="IngredChef_Logo.png">
     
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <!-- 🚪 CENTRAL GATEWAY SCREEN -->
     <div id="view-gateway" class="gateway-screen">
         <div class="gateway-card">
             <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" class="gateway-brand-logo" onerror="this.style.display='none'; document.getElementById('fallback-avatar').style.display='flex';">
             <div id="fallback-avatar" style="width:140px; height:140px; border-radius:50%; margin:0 auto 15px auto; background:#34495e; display:none; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold;">👨‍🍳</div>
             
-            <h2>Welcome to IngredChef</h2>
-            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace Interface</p>
+            <h2>Welcome to IngredChef Kiosk Hub</h2>
+            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace</p>
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
-            <p style="font-size:0.75rem; color:#bdc3c7; margin-top:20px;">Connected to Supabase WebSocket Pipeline</p>
+            <p style="font-size:0.75rem; color:#bdc3c7; margin-top:20px;">Connected to Supabase</p>
         </div>
     </div>
 
+    <!-- 🔐 KITCHEN PORTAL AUTHENTICATION MODAL -->
+    <!-- Added autocomplete="off" directly here to instruct browsers not to prefill these fields -->
     <div id="kds-auth-screen" class="auth-overlay hidden">
         <div class="auth-card">
             <h3 style="margin-top:0; color:#2c3e50;">🔒 KDS Security Gateway</h3>
             <p style="font-size:0.8rem; color:#7f8c8d; margin-bottom:15px;">Enter Stall Name or 'Admin' to authenticate</p>
-            <input type="text" id="auth-username" class="form-input" placeholder="Stall Name or Admin">
-            <input type="password" id="auth-password" class="form-input" placeholder="Password Access Token">
+            <input type="text" id="auth-username" class="form-input" placeholder="Stall Name or Admin" autocomplete="off">
+            <input type="password" id="auth-password" class="form-input" placeholder="Password Access Token" autocomplete="off">
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button id="auth-cancel-btn" style="background:#bdc3c7; flex:1; padding:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Cancel</button>
                 <button id="auth-login-btn" style="background:#3498db; color:white; flex:2; padding:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Login</button>
@@ -39,11 +43,12 @@
         </div>
     </div>
 
+    <!-- 🛒 VIEW STATE A: CUSTOMER ORDERING KIOSK INTERFACE -->
     <div id="view-customer-kiosk" class="hidden">
         <header class="app-header">
             <div style="display:flex; align-items:center; gap:15px;">
                 <button class="exit-workspace-btn" id="exit-kiosk-btn">← Exit Workspace</button>
-                <h1 style="color:white; margin:0; font-size:1.4rem;">IngredChef Kiosk</h1>
+                <h1 style="color:white; margin:0; font-size:1.4rem;">Keep Kiosk Terminal</h1>
             </div>
             <div style="display:flex; gap:10px; align-items:center;">
                 <input type="text" id="cust-name-input" placeholder="Your Name" class="header-input">
@@ -66,11 +71,12 @@
                         <button class="category-card" data-category="Pasta">🍝 Pasta</button>
                         <button class="category-card" data-category="Dessert">🍰 Desserts</button>
                         <button class="category-card" data-category="Chicken">🍗 Chicken</button>
+                        <button class="category-card" data-category="French Fries">🍟 Fries</button>
                     </div>
                 </section>
 
                 <div style="display:flex; gap:10px; margin-bottom:20px;">
-                    <input type="text" id="food-search-input" placeholder="Search dish keywords (e.g. Rice, Cake)..." style="flex:1; padding:12px; border-radius:6px; border:2px solid #cbd5e1; font-size:1rem;">
+                    <input type="text" id="food-search-input" placeholder="Search dish keywords (e.g. Fries, Rice, Cake)..." style="flex:1; padding:12px; border-radius:6px; border:2px solid #cbd5e1; font-size:1rem;">
                     <button id="search-btn" style="background:#34495e; color:white; border:none; padding:0 25px; border-radius:6px; font-weight:bold; cursor:pointer;">Search</button>
                 </div>
 
@@ -108,6 +114,7 @@
         </div>
     </div>
 
+    <!-- 🍳 VIEW STATE B: KITCHEN DISPLAY SYSTEM (KDS) & ADMINISTRATION PANEL -->
     <div id="view-kitchen-hub" class="hidden">
         <header class="app-header" style="background:#2c3e50;">
             <div style="display:flex; align-items:center; gap:15px;">
@@ -115,13 +122,14 @@
                 <h1 style="color:white; margin:0; font-size:1.4rem;">IngredChef Kitchen Hub</h1>
             </div>
             <div style="display:flex; gap:15px; align-items:center;">
-                <button class="exit-workspace-btn" style="background:#34495e;" id="hub-to-kiosk-shortcut-btn">Go To Kiosk Kiosk 🛒</button>
+                <button class="exit-workspace-btn" style="background:#34495e;" id="hub-to-kiosk-shortcut-btn">Go To Customer Kiosk 🛒</button>
                 <span id="active-session-identity" class="session-user-badge">Connecting Stream...</span>
             </div>
         </header>
 
         <div style="padding:30px; max-width:1600px; margin:0 auto;">
             
+            <!-- 🛠️ MERCHANDISE MENU MANAGER -->
             <section id="stall-menu-manager" class="admin-dashboard hidden" style="background: white; border-color: #3498db;">
                 <h3 style="color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 5px;">📋 Isolated Menu Customizer Portal</h3>
                 <p id="current-stall-display" style="font-weight: bold; color: #7f8c8d; font-size: 0.9rem; margin-bottom: 15px;"></p>
@@ -131,15 +139,16 @@
                     <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                         <div>
                             <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Food Item Name</label>
-                            <input type="text" id="food-name" required placeholder="e.g., Spicy Thai Basil Chicken" class="form-input" style="margin:0;">
+                            <input type="text" id="food-name" required placeholder="e.g., French Fries" class="form-input" style="margin:0;">
                         </div>
                         <div>
                             <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Price (₹)</label>
-                            <input type="number" id="food-price" required min="1" placeholder="e.g., 240" class="form-input" style="margin:0;">
+                            <input type="number" id="food-price" required min="1" placeholder="e.g., 100" class="form-input" style="margin:0;">
                         </div>
                         <div>
                             <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Filter Tag</label>
                             <select id="food-category" class="form-input" style="margin:0; height:40px;">
+                                <option value="French Fries">French Fries</option>
                                 <option value="Pizza">Pizza</option>
                                 <option value="Beef">Beef</option>
                                 <option value="Pasta">Pasta</option>
@@ -178,6 +187,7 @@
                 </div>
             </section>
 
+            <!-- CENTRAL ADMIN MASTER CONTROL -->
             <section id="central-admin-view" class="admin-dashboard hidden">
                 <h2 style="color: #2c3e50; border-bottom:3px solid #34495e; padding-bottom:8px; margin-top:0;">💎 System Master Control Node</h2>
                 <div class="vendor-manager-grid">
@@ -216,6 +226,7 @@
                 </div>
             </section>
 
+            <!-- OPERATION RAILS KDS DESK -->
             <section id="kitchen-display-view">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="color:#2c3e50; margin:0;">🍳 Kitchen Ticket Stream Dispatch Engine</h2>
@@ -239,6 +250,7 @@
         </div>
     </div>
 
+    <!-- MODAL WINDOW INJECTIONS -->
     <div id="recipe-modal" class="modal-backdrop hidden">
         <div class="modal-card">
             <button id="close-modal-btn" class="modal-close-x">&times;</button>
@@ -246,9 +258,11 @@
         </div>
     </div>
 
+    <!-- MODERN TRANSACTION GATEWAY & RECEIPT SYSTEM MODAL -->
     <div id="checkout-gateway-modal" class="modal-backdrop hidden">
         <div class="payment-container">
             
+            <!-- STEP 1: SCANNABLE QR NODE -->
             <div id="payment-step-qr" class="checkout-card">
                 <div class="payment-header">
                     <span class="badge-processing">🔄 Processing Transaction Securing</span>
@@ -267,6 +281,7 @@
                 </div>
             </div>
 
+            <!-- STEP 2: UNIQUE INDEPENDENT SPLIT CHRONOLOGICAL TOKENS -->
             <div id="payment-step-success" class="checkout-card hidden">
                 <div class="success-icon">✓</div>
                 <h2 style="color:#27ae60; margin:10px 0 5px 0;">Order Transmitted!</h2>
@@ -281,13 +296,13 @@
         </div>
     </div>
 
+    <!-- AUTOMATION SDK IMPLEMENTATIONS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co/rest/v1/"; 
         const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
         
         let dbClient = null;
-        let isSupabaseConfigured = false;
 
         try {
             if (SUPABASE_PROJECT_URL && !SUPABASE_PROJECT_URL.includes("your-project-id")) {
@@ -306,6 +321,7 @@
         let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
         
         let currentStallSequences = JSON.parse(localStorage.getItem('currentStallSequences')) || {
+            "Taco Stand": { prefix: "TC", seq: 1 },
             "Wok & Roll Asian Kitchen": { prefix: "WK", seq: 12 },
             "Bella Italia Pasta Counter": { prefix: "BI", seq: 8 },
             "The Spud Shack & Grill": { prefix: "SP", seq: 41 }
@@ -313,6 +329,9 @@
 
         // Baseline pre-seeded menu options linked immediately on first start
         const BASELINE_MOCK_DATA = {
+            "Taco Stand": [
+                { id: "base-tc-1", name: "French Fries", price: "100", category: "French Fries", addons: [{ name: "Cheese Dip", price: "20" }] }
+            ],
             "Wok & Roll Asian Kitchen": [
                 { id: "base-wk-1", name: "Spicy Thai Basil Chicken", price: "240", category: "Chicken", addons: [{ name: "Extra Egg", price: "30" }] },
                 { id: "base-wk-2", name: "Szechuan Beef Noodles", price: "280", category: "Beef", addons: [{ name: "Extra Bok Choy", price: "20" }] }
@@ -329,7 +348,19 @@
 
         let activeStagingPayload = null; 
 
+        // 💥 FIX EXPLICIT: Clears the login authentication text boxes instantly every single time the browser is refreshed
+        window.onbeforeunload = function() {
+            const userBox = document.getElementById('auth-username');
+            const passBox = document.getElementById('auth-password');
+            if (userBox) userBox.value = '';
+            if (passBox) passBox.value = '';
+        };
+
         document.addEventListener('DOMContentLoaded', async () => {
+            // Also wipe values on content ready to guard against aggressive cache layers
+            if (document.getElementById('auth-username')) document.getElementById('auth-username').value = '';
+            if (document.getElementById('auth-password')) document.getElementById('auth-password').value = '';
+
             // Initialize Baseline items into globalStallMenus memory cache if empty
             Object.keys(BASELINE_MOCK_DATA).forEach(stall => {
                 if (!globalStallMenus[stall]) {
@@ -438,14 +469,13 @@
             
             let combinedResults = [];
 
-            // FIXED: Automatically maps custom food terms to targeted image keywords instead of static pizza links
             Object.keys(globalStallMenus).forEach(stallName => {
                 globalStallMenus[stallName].forEach(item => {
                     if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
-                        const sanitizedFoodName = encodeURIComponent(item.name.toLowerCase());
+                        const keyword = encodeURIComponent(item.name.toLowerCase());
                         combinedResults.push({
                             isCustom: true, idMeal: item.id, strMeal: item.name,
-                            strMealThumb: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80&fit=crop&auto=format&txt=${sanitizedFoodName}`,
+                            strMealThumb: `https://images.unsplash.com/photo-1518013041235-0133b2894867?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&sig=${Math.floor(Math.random()*10000)}&q=food,${keyword}`,
                             customCost: item.price, customStall: stallName, customAddons: item.addons || []
                         });
                     }
@@ -478,8 +508,21 @@
                 }
             } catch { console.warn("External dictionary connectivity offline."); }
 
+            if (combinedResults.length === 0) {
+                Object.keys(globalStallMenus).forEach(stallName => {
+                    globalStallMenus[stallName].forEach(item => {
+                        const keyword = encodeURIComponent(item.name.toLowerCase());
+                        combinedResults.push({
+                            isCustom: true, idMeal: item.id, strMeal: item.name,
+                            strMealThumb: `https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&auto=format&fit=crop&q=60&q=food,${keyword}`,
+                            customCost: item.price, customStall: stallName, customAddons: item.addons || []
+                        });
+                    });
+                });
+            }
+
             if (combinedResults.length === 0) return msg.textContent = "❌ Zero matches located. Try alternative options.";
-            msg.textContent = `🍟 Loaded ${combinedResults.length} listings for "${term}":`;
+            msg.textContent = ` Loaded ${combinedResults.length} listings for "${term}":`;
             displayMealCardsUI(combinedResults);
         }
 
@@ -683,6 +726,7 @@
         // ==========================================
         async function fetchOperationalStallData() {
             const defaultStalls = [
+                { name: "Taco Stand", prefix: "TC", secret: "taco123" },
                 { name: "Wok & Roll Asian Kitchen", prefix: "WK", secret: "wok123" },
                 { name: "Bella Italia Pasta Counter", prefix: "BI", secret: "pasta123" },
                 { name: "The Spud Shack & Grill", prefix: "SP", secret: "spud123" }
