@@ -19,7 +19,7 @@
             <div id="fallback-avatar" style="width:140px; height:140px; border-radius:50%; margin:0 auto 15px auto; background:#34495e; display:none; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold;">👨‍🍳</div>
             
             <h2>Welcome to IngredChef Kiosk Hub</h2>
-            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace</p>
+            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace Interface</p>
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
@@ -28,7 +28,6 @@
     </div>
 
     <!-- 🔐 KITCHEN PORTAL AUTHENTICATION MODAL -->
-    <!-- Added autocomplete="off" directly here to instruct browsers not to prefill these fields -->
     <div id="kds-auth-screen" class="auth-overlay hidden">
         <div class="auth-card">
             <h3 style="margin-top:0; color:#2c3e50;">🔒 KDS Security Gateway</h3>
@@ -66,12 +65,12 @@
                 <section style="margin-bottom:20px;">
                     <h3 style="color:#2c3e50; margin:0 0 10px 0;">🍔 Quick Browse Categories</h3>
                     <div class="category-scroll">
+                        <button class="category-card" data-category="French Fries">🍟 Fries</button>
                         <button class="category-card" data-category="Pizza">🍕 Pizza</button>
                         <button class="category-card" data-category="Beef">🥩 Beef</button>
                         <button class="category-card" data-category="Pasta">🍝 Pasta</button>
                         <button class="category-card" data-category="Dessert">🍰 Desserts</button>
                         <button class="category-card" data-category="Chicken">🍗 Chicken</button>
-                        <button class="category-card" data-category="French Fries">🍟 Fries</button>
                     </div>
                 </section>
 
@@ -114,7 +113,7 @@
         </div>
     </div>
 
-    <!-- 🍳 VIEW STATE B: KITCHEN DISPLAY SYSTEM (KDS) & ADMINISTRATION PANEL -->
+    <!-- 🍳 VIEW STATE B: KITCHEN DISPLAY SYSTEM (KDS) -->
     <div id="view-kitchen-hub" class="hidden">
         <header class="app-header" style="background:#2c3e50;">
             <div style="display:flex; align-items:center; gap:15px;">
@@ -258,7 +257,7 @@
         </div>
     </div>
 
-    <!-- MODERN TRANSACTION GATEWAY & RECEIPT SYSTEM MODAL -->
+    <!-- MODERN TRANSACTION GATEWAY -->
     <div id="checkout-gateway-modal" class="modal-backdrop hidden">
         <div class="payment-container">
             
@@ -289,7 +288,7 @@
                 
                 <div id="generated-tokens-stack"></div>
                 
-                <p style="font-size:0.8rem; color:#7f8c8d; line-height:1.4;">⚠️ Please monitors the respective kitchen monitor blocks. Tokens increment automatically per stall based on transaction timestamps.</p>
+                <p style="font-size:0.8rem; color:#7f8c8d; line-height:1.4;">⚠️ Please monitors the respective kitchen monitor blocks.</p>
                 <button class="btn-done" id="finalize-success-close-btn" style="width:100%; padding:12px; margin-top:15px; border-radius:8px; border:none; background:#2c3e50; color:white; font-weight:bold; cursor:pointer;">Complete Session & Return</button>
             </div>
 
@@ -303,6 +302,7 @@
         const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
         
         let dbClient = null;
+        let isSupabaseConfigured = false;
 
         try {
             if (SUPABASE_PROJECT_URL && !SUPABASE_PROJECT_URL.includes("your-project-id")) {
@@ -346,9 +346,26 @@
             ]
         };
 
+        // Dynamic Curated Image Routing Matrix to resolve the generic image issue seen in image_626b83.png
+        const ASSET_IMAGE_ROUTER = {
+            "french fries": "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&auto=format&fit=crop&q=80",
+            "pizza": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=80",
+            "beef": "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&auto=format&fit=crop&q=80",
+            "pasta": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=80",
+            "dessert": "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500&auto=format&fit=crop&q=80",
+            "chicken": "https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=500&auto=format&fit=crop&q=80"
+        };
+
+        function fetchTargetVisualSource(itemName, categoryName) {
+            const keyLabel = itemName.toLowerCase();
+            const catLabel = categoryName ? categoryName.toLowerCase() : "";
+            if (ASSET_IMAGE_ROUTER[keyLabel]) return ASSET_IMAGE_ROUTER[keyLabel];
+            if (ASSET_IMAGE_ROUTER[catLabel]) return ASSET_IMAGE_ROUTER[catLabel];
+            return "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80";
+        }
+
         let activeStagingPayload = null; 
 
-        // 💥 FIX EXPLICIT: Clears the login authentication text boxes instantly every single time the browser is refreshed
         window.onbeforeunload = function() {
             const userBox = document.getElementById('auth-username');
             const passBox = document.getElementById('auth-password');
@@ -357,11 +374,9 @@
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Also wipe values on content ready to guard against aggressive cache layers
             if (document.getElementById('auth-username')) document.getElementById('auth-username').value = '';
             if (document.getElementById('auth-password')) document.getElementById('auth-password').value = '';
 
-            // Initialize Baseline items into globalStallMenus memory cache if empty
             Object.keys(BASELINE_MOCK_DATA).forEach(stall => {
                 if (!globalStallMenus[stall]) {
                     globalStallMenus[stall] = [...BASELINE_MOCK_DATA[stall]];
@@ -420,12 +435,10 @@
             document.getElementById('view-gateway').classList.remove('hidden');
         }
 
-        // ==========================================
-        // 🛒 SECTION A: CUSTOMER WORKSPACE CODE
-        // ==========================================
         async function launchCustomerWorkspaceView() {
             document.getElementById('view-gateway').classList.add('hidden');
             document.getElementById('view-customer-kiosk').classList.remove('hidden');
+            await fetchOperationalStallData(); // Forces dynamic validation check against operational stalls list
             
             if (isSupabaseConfigured) {
                 try {
@@ -469,13 +482,15 @@
             
             let combinedResults = [];
 
+            // Dynamic filter sync: items from revoked stalls will no longer populate here
             Object.keys(globalStallMenus).forEach(stallName => {
+                if (!foodCourtStalls.includes(stallName)) return; 
+
                 globalStallMenus[stallName].forEach(item => {
                     if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
-                        const keyword = encodeURIComponent(item.name.toLowerCase());
                         combinedResults.push({
                             isCustom: true, idMeal: item.id, strMeal: item.name,
-                            strMealThumb: `https://images.unsplash.com/photo-1518013041235-0133b2894867?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&sig=${Math.floor(Math.random()*10000)}&q=food,${keyword}`,
+                            strMealThumb: fetchTargetVisualSource(item.name, item.category),
                             customCost: item.price, customStall: stallName, customAddons: item.addons || []
                         });
                     }
@@ -494,9 +509,10 @@
                         const cost = Math.max(120, Math.min(((parseInt(meal.idMeal || "52771") % 300) + 140), 650));
                         const stall = foodCourtStalls[Math.abs(meal.strMeal.charCodeAt(0) + i) % foodCourtStalls.length] || "Global Counter";
                         
-                        if(!combinedResults.some(r => r.strMeal.toLowerCase() === meal.strMeal.toLowerCase())) {
+                        if (foodCourtStalls.includes(stall) && !combinedResults.some(r => r.strMeal.toLowerCase() === meal.strMeal.toLowerCase())) {
                             combinedResults.push({
-                                isCustom: false, idMeal: meal.idMeal, strMeal: meal.strMeal, strMealThumb: meal.strMealThumb,
+                                isCustom: false, idMeal: meal.idMeal, strMeal: meal.strMeal, 
+                                strMealThumb: fetchTargetVisualSource(meal.strMeal, term),
                                 customCost: cost, customStall: stall,
                                 customAddons: [
                                     { name: "Layered Cheddar Cheese", price: "40" },
@@ -510,11 +526,11 @@
 
             if (combinedResults.length === 0) {
                 Object.keys(globalStallMenus).forEach(stallName => {
+                    if (!foodCourtStalls.includes(stallName)) return;
                     globalStallMenus[stallName].forEach(item => {
-                        const keyword = encodeURIComponent(item.name.toLowerCase());
                         combinedResults.push({
                             isCustom: true, idMeal: item.id, strMeal: item.name,
-                            strMealThumb: `https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&auto=format&fit=crop&q=60&q=food,${keyword}`,
+                            strMealThumb: fetchTargetVisualSource(item.name, item.category),
                             customCost: item.price, customStall: stallName, customAddons: item.addons || []
                         });
                     });
@@ -594,9 +610,6 @@
             document.getElementById('cart-grand-total').textContent = `₹${sum}`;
         }
 
-        // ==========================================
-        // 💳 SECURE QR TRANSACTION LAYER
-        // ==========================================
         function loadTransactionScreenOverlay() {
             if (!activeCustomer) return alert("Link profile parameters before initiating payment logic.");
             if (cart.length === 0) return alert("Basket container contains zero elements.");
@@ -684,9 +697,7 @@
             localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
 
             if (isSupabaseConfigured) {
-                try {
-                    await dbClient.from('orders').insert([activeStagingPayload]);
-                } catch (err) { console.warn("Supabase transmission deferred.", err); }
+                try { await dbClient.from('orders').insert([activeStagingPayload]); } catch (err) { console.warn(err); }
             }
 
             updateHistoryDashboardUI();
@@ -721,9 +732,6 @@
             document.getElementById('session-status-text').style.color="#e67e22"; document.getElementById('session-status-text').style.background="#fff2e6"; 
         }
 
-        // ==========================================
-        // 🍳 SECTION B: KITCHEN OPERATIONS CORE CODE
-        // ==========================================
         async function fetchOperationalStallData() {
             const defaultStalls = [
                 { name: "Taco Stand", prefix: "TC", secret: "taco123" },
@@ -826,7 +834,7 @@
             const rowId = 'addrow-' + Math.floor(Math.random() * 100000);
             const div = document.createElement('div'); div.id = rowId; div.style.display = "flex"; div.style.gap = "10px";
             div.innerHTML = `
-                <input type="text" placeholder="Add-on Name (e.g., Extra Cheese)" class="form-input addon-name-input" value="${name}" style="margin:0; flex:2; height:32px; font-size:0.8rem;">
+                <input type="text" placeholder="Add-on Name" class="form-input addon-name-input" value="${name}" style="margin:0; flex:2; height:32px; font-size:0.8rem;">
                 <input type="number" placeholder="Cost (₹)" class="form-input addon-price-input" value="${price}" style="margin:0; flex:1; height:32px; font-size:0.8rem;">
                 <button type="button" onclick="document.getElementById('${rowId}').remove()" style="background:none; border:none; color:#e74c3c; font-weight:bold; cursor:pointer;">✕</button>
             `;
@@ -898,7 +906,7 @@
             const items = globalStallMenus[stallName] || [];
 
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom menu items built yet. Items added here will instantly appear on the customer kiosk.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom menu items built yet.</td></tr>`;
                 return;
             }
 
@@ -967,9 +975,18 @@
             (window.cachedStalls || []).forEach(s => {
                 const div = document.createElement('div'); div.className = "vendor-row";
                 div.innerHTML = `<span>🏪 ${s.name} [<strong>${s.prefix || '??'}</strong>]</span> <button class="vendor-del-btn">Revoke</button>`;
+                
+                // FIX: Cascades stall termination to instantly purge its isolated items from customer grid access
                 div.querySelector('.vendor-del-btn').onclick = () => {
-                    window.cachedStalls = window.cachedStalls.filter(st => st.name !== s.name);
+                    const targetStall = s.name;
+                    window.cachedStalls = window.cachedStalls.filter(st => st.name !== targetStall);
                     localStorage.setItem('allStallsRegistry', JSON.stringify(window.cachedStalls));
+                    
+                    if (globalStallMenus[targetStall]) {
+                        delete globalStallMenus[targetStall];
+                        localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
+                    }
+                    
                     fetchOperationalStallData();
                     renderAdminVendorListUI();
                 };
