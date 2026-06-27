@@ -18,8 +18,8 @@
             <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" class="gateway-brand-logo" onerror="this.style.display='none'; document.getElementById('fallback-avatar').style.display='flex';">
             <div id="fallback-avatar" style="width:140px; height:140px; border-radius:50%; margin:0 auto 15px auto; background:#34495e; display:none; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold;">👨‍🍳</div>
             
-            <h2>Welcome to IngredChef Kiosk Hub</h2>
-            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace Interface</p>
+            <h2>Welcome to IngredChef Kiosk</h2>
+            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace</p>
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
@@ -327,7 +327,6 @@
             "The Spud Shack & Grill": { prefix: "SP", seq: 41 }
         };
 
-        // Baseline pre-seeded menu options linked immediately on first start
         const BASELINE_MOCK_DATA = {
             "Taco Stand": [
                 { id: "base-tc-1", name: "French Fries", price: "100", category: "French Fries", addons: [{ name: "Cheese Dip", price: "20" }] }
@@ -346,36 +345,67 @@
             ]
         };
 
-        // Dynamic Curated Image Routing Matrix to resolve the generic image issue seen in image_626b83.png
+        // Diversified Matrix Lists to guarantee unique asset links and avoid image duplication errors
         const ASSET_IMAGE_ROUTER = {
-            "french fries": "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&auto=format&fit=crop&q=80",
-            "pizza": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=80",
-            "beef": "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&auto=format&fit=crop&q=80",
-            "pasta": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=80",
-            "dessert": "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500&auto=format&fit=crop&q=80",
-            "chicken": "https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=500&auto=format&fit=crop&q=80"
+            "french fries": [
+                "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&auto=format&fit=crop&q=80"
+            ],
+            "pizza": [
+                "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=500&auto=format&fit=crop&q=80"
+            ],
+            "beef": [
+                "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=500&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=500&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1624246380854-41d66acc2901?w=500&auto=format&fit=crop&q=80"
+            ],
+            "pasta": [
+                "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=500&auto=format&fit=crop&q=80"
+            ],
+            "dessert": [
+                "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=500&auto=format&fit=crop&q=80"
+            ],
+            "chicken": [
+                "https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=500&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1562967914-608f82629710?w=500&auto=format&fit=crop&q=80"
+            ]
         };
 
-        function fetchTargetVisualSource(itemName, categoryName) {
+        function fetchTargetVisualSource(itemName, categoryName, indexCount = 0) {
             const keyLabel = itemName.toLowerCase();
             const catLabel = categoryName ? categoryName.toLowerCase() : "";
-            if (ASSET_IMAGE_ROUTER[keyLabel]) return ASSET_IMAGE_ROUTER[keyLabel];
-            if (ASSET_IMAGE_ROUTER[catLabel]) return ASSET_IMAGE_ROUTER[catLabel];
+            
+            let pool = [];
+            if (ASSET_IMAGE_ROUTER[keyLabel]) pool = ASSET_IMAGE_ROUTER[keyLabel];
+            else if (ASSET_IMAGE_ROUTER[catLabel]) pool = ASSET_IMAGE_ROUTER[catLabel];
+            
+            if (pool && pool.length > 0) {
+                return pool[indexCount % pool.length];
+            }
             return "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80";
         }
 
         let activeStagingPayload = null; 
 
         window.onbeforeunload = function() {
-            const userBox = document.getElementById('auth-username');
-            const passBox = document.getElementById('auth-password');
-            if (userBox) userBox.value = '';
-            if (passBox) passBox.value = '';
+            wipeKdsAuthInputBoxes();
         };
 
+        function wipeKdsAuthInputBoxes() {
+            const userBox = document.getElementById('auth-username');
+            const passBox = document.getElementById('auth-password');
+            const errBox = document.getElementById('auth-error-msg');
+            if (userBox) userBox.value = '';
+            if (passBox) passBox.value = '';
+            if (errBox) errBox.textContent = '';
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
-            if (document.getElementById('auth-username')) document.getElementById('auth-username').value = '';
-            if (document.getElementById('auth-password')) document.getElementById('auth-password').value = '';
+            wipeKdsAuthInputBoxes();
 
             Object.keys(BASELINE_MOCK_DATA).forEach(stall => {
                 if (!globalStallMenus[stall]) {
@@ -385,11 +415,22 @@
             localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
 
             document.getElementById('gate-to-customer-btn').addEventListener('click', launchCustomerWorkspaceView);
-            document.getElementById('gate-to-kitchen-btn').addEventListener('click', () => document.getElementById('kds-auth-screen').classList.remove('hidden'));
-            document.getElementById('auth-cancel-btn').addEventListener('click', () => document.getElementById('kds-auth-screen').classList.add('hidden'));
+            document.getElementById('gate-to-kitchen-btn').addEventListener('click', () => {
+                wipeKdsAuthInputBoxes();
+                document.getElementById('kds-auth-screen').classList.remove('hidden');
+            });
+            document.getElementById('auth-cancel-btn').addEventListener('click', () => {
+                wipeKdsAuthInputBoxes();
+                document.getElementById('kds-auth-screen').classList.add('hidden');
+            });
             document.getElementById('auth-login-btn').addEventListener('click', processKdsSecurityAccessCheck);
             document.getElementById('exit-kiosk-btn').addEventListener('click', returnToMainGateway);
+            
+            // SECURITY PATCH: Clicking Go to Kiosk automatically logs out active KDS, destroys token data, and purges inputs
             document.getElementById('hub-to-kiosk-shortcut-btn').addEventListener('click', () => {
+                sessionStorage.removeItem('activeHubUser');
+                activeUserSession = null;
+                wipeKdsAuthInputBoxes();
                 document.getElementById('view-kitchen-hub').classList.add('hidden');
                 launchCustomerWorkspaceView();
             });
@@ -438,7 +479,7 @@
         async function launchCustomerWorkspaceView() {
             document.getElementById('view-gateway').classList.add('hidden');
             document.getElementById('view-customer-kiosk').classList.remove('hidden');
-            await fetchOperationalStallData(); // Forces dynamic validation check against operational stalls list
+            await fetchOperationalStallData();
             
             if (isSupabaseConfigured) {
                 try {
@@ -481,8 +522,8 @@
             msg.textContent = `🔍 Querying items catalog matching "${term}"...`;
             
             let combinedResults = [];
+            let imageIndexTracker = 0;
 
-            // Dynamic filter sync: items from revoked stalls will no longer populate here
             Object.keys(globalStallMenus).forEach(stallName => {
                 if (!foodCourtStalls.includes(stallName)) return; 
 
@@ -490,7 +531,7 @@
                     if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
                         combinedResults.push({
                             isCustom: true, idMeal: item.id, strMeal: item.name,
-                            strMealThumb: fetchTargetVisualSource(item.name, item.category),
+                            strMealThumb: fetchTargetVisualSource(item.name, item.category, imageIndexTracker++),
                             customCost: item.price, customStall: stallName, customAddons: item.addons || []
                         });
                     }
@@ -512,7 +553,7 @@
                         if (foodCourtStalls.includes(stall) && !combinedResults.some(r => r.strMeal.toLowerCase() === meal.strMeal.toLowerCase())) {
                             combinedResults.push({
                                 isCustom: false, idMeal: meal.idMeal, strMeal: meal.strMeal, 
-                                strMealThumb: fetchTargetVisualSource(meal.strMeal, term),
+                                strMealThumb: fetchTargetVisualSource(meal.strMeal, term, imageIndexTracker++),
                                 customCost: cost, customStall: stall,
                                 customAddons: [
                                     { name: "Layered Cheddar Cheese", price: "40" },
@@ -530,7 +571,7 @@
                     globalStallMenus[stallName].forEach(item => {
                         combinedResults.push({
                             isCustom: true, idMeal: item.id, strMeal: item.name,
-                            strMealThumb: fetchTargetVisualSource(item.name, item.category),
+                            strMealThumb: fetchTargetVisualSource(item.name, item.category, imageIndexTracker++),
                             customCost: item.price, customStall: stallName, customAddons: item.addons || []
                         });
                     });
@@ -976,7 +1017,6 @@
                 const div = document.createElement('div'); div.className = "vendor-row";
                 div.innerHTML = `<span>🏪 ${s.name} [<strong>${s.prefix || '??'}</strong>]</span> <button class="vendor-del-btn">Revoke</button>`;
                 
-                // FIX: Cascades stall termination to instantly purge its isolated items from customer grid access
                 div.querySelector('.vendor-del-btn').onclick = () => {
                     const targetStall = s.name;
                     window.cachedStalls = window.cachedStalls.filter(st => st.name !== targetStall);
@@ -1044,7 +1084,11 @@
             }
         }
 
-        function terminateKitchenHubSession() { sessionStorage.removeItem('activeHubUser'); location.reload(); }
+        function terminateKitchenHubSession() { 
+            sessionStorage.removeItem('activeHubUser'); 
+            wipeKdsAuthInputBoxes();
+            location.reload(); 
+        }
     </script>
 </body>
 </html>
