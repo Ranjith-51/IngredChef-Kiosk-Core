@@ -18,7 +18,7 @@
             <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" class="gateway-brand-logo" onerror="this.style.display='none'; document.getElementById('fallback-avatar').style.display='flex';">
             <div id="fallback-avatar" style="width:140px; height:140px; border-radius:50%; margin:0 auto 15px auto; background:#34495e; display:none; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold;">👨‍🍳</div>
             
-            <h2>Welcome to IngredChef Kiosk</h2>
+            <h2>Welcome to IngredChef Hub</h2>
             <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace</p>
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
@@ -47,7 +47,7 @@
         <header class="app-header">
             <div style="display:flex; align-items:center; gap:15px;">
                 <button class="exit-workspace-btn" id="exit-kiosk-btn">← Exit Workspace</button>
-                <h1 style="color:white; margin:0; font-size:1.4rem;">Keep Kiosk Terminal</h1>
+                <h1 style="color:white; margin:0; font-size:1.4rem;">Kiosk Terminal</h1>
             </div>
             <div style="display:flex; gap:10px; align-items:center;">
                 <input type="text" id="cust-name-input" placeholder="Your Name" class="header-input">
@@ -65,6 +65,7 @@
                 <section style="margin-bottom:20px;">
                     <h3 style="color:#2c3e50; margin:0 0 10px 0;">🍔 Quick Browse Categories</h3>
                     <div class="category-scroll">
+                        <button class="category-card" data-category="ALL">🌐 All Items</button>
                         <button class="category-card" data-category="French Fries">🍟 Fries</button>
                         <button class="category-card" data-category="Pizza">🍕 Pizza</button>
                         <button class="category-card" data-category="Beef">🥩 Beef</button>
@@ -75,11 +76,11 @@
                 </section>
 
                 <div style="display:flex; gap:10px; margin-bottom:20px;">
-                    <input type="text" id="food-search-input" placeholder="Search dish keywords (e.g. Fries, Rice, Cake)..." style="flex:1; padding:12px; border-radius:6px; border:2px solid #cbd5e1; font-size:1rem;">
+                    <input type="text" id="food-search-input" placeholder="Search registered dish names or keywords..." style="flex:1; padding:12px; border-radius:6px; border:2px solid #cbd5e1; font-size:1rem;">
                     <button id="search-btn" style="background:#34495e; color:white; border:none; padding:0 25px; border-radius:6px; font-weight:bold; cursor:pointer;">Search</button>
                 </div>
 
-                <p id="status-message" style="color:#7f8c8d; font-weight:bold;">🥣 Select a category or search to load delicacies!</p>
+                <p id="status-message" style="color:#7f8c8d; font-weight:bold;">🥣 Browse menus or filter categories to find food!</p>
                 <div id="recipe-grid" class="cards-grid"></div>
             </main>
 
@@ -138,11 +139,11 @@
                     <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                         <div>
                             <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Food Item Name</label>
-                            <input type="text" id="food-name" required placeholder="e.g., French Fries" class="form-input" style="margin:0;">
+                            <input type="text" id="food-name" required placeholder="e.g., Chocolate Lava Fudge Sundae" class="form-input" style="margin:0;">
                         </div>
                         <div>
                             <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Price (₹)</label>
-                            <input type="number" id="food-price" required min="1" placeholder="e.g., 100" class="form-input" style="margin:0;">
+                            <input type="number" id="food-price" required min="1" placeholder="e.g., 150" class="form-input" style="margin:0;">
                         </div>
                         <div>
                             <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Filter Tag</label>
@@ -155,6 +156,12 @@
                                 <option value="Chicken">Chicken</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- 📸 FIXED IMAGE SOLUTION FIELD -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Exact Image URL (Pasted Link)</label>
+                        <input type="url" id="food-image-url" required placeholder="Paste exact image web address link (e.g., https://images.unsplash.com/...)" class="form-input" style="margin:0;">
                     </div>
 
                     <div style="background:#f4f6f7; padding:15px; border-radius:6px; margin-bottom:15px;">
@@ -174,6 +181,7 @@
                     <table style="width:100%; border-collapse:collapse; font-size:0.85rem; background:white; border:1px solid #ddd;">
                         <thead style="background:#f2f4f4;">
                             <tr>
+                                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Preview</th>
                                 <th style="padding:8px; border:1px solid #ddd; text-align:left;">Item Label</th>
                                 <th style="padding:8px; border:1px solid #ddd; text-align:left;">Category</th>
                                 <th style="padding:8px; border:1px solid #ddd; text-align:left;">Base Cost</th>
@@ -192,8 +200,8 @@
                 <div class="vendor-manager-grid">
                     <div style="background:white; padding:20px; border-radius:8px; border:1px solid #e2e8f0;">
                         <h4 style="margin-top:0; color:#34495e;">🏬 Provision New Stall Panel</h4>
-                        <input type="text" id="new-stall-name" class="form-input" placeholder="Stall Name (e.g. Taco Stand)">
-                        <input type="text" id="new-stall-prefix" class="form-input" placeholder="Stall Code Prefix (e.g. TC)">
+                        <input type="text" id="new-stall-name" class="form-input" placeholder="Stall Name (e.g. Dessert Stand)">
+                        <input type="text" id="new-stall-prefix" class="form-input" placeholder="Stall Code Prefix (e.g. DS)">
                         <input type="password" id="new-stall-password" class="form-input" placeholder="Access Password">
                         <button id="commit-add-stall-btn" style="background:#2ecc71; color:white; border:none; width:100%; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:5px;">Create Outlet</button>
                     </div>
@@ -288,7 +296,7 @@
                 
                 <div id="generated-tokens-stack"></div>
                 
-                <p style="font-size:0.8rem; color:#7f8c8d; line-height:1.4;">⚠️ Please monitors the respective kitchen monitor blocks.</p>
+                <p style="font-size:0.8rem; color:#7f8c8d; line-height:1.4;">⚠️ Please monitor the respective kitchen monitor blocks.</p>
                 <button class="btn-done" id="finalize-success-close-btn" style="width:100%; padding:12px; margin-top:15px; border-radius:8px; border:none; background:#2c3e50; color:white; font-weight:bold; cursor:pointer;">Complete Session & Return</button>
             </div>
 
@@ -308,92 +316,20 @@
             if (SUPABASE_PROJECT_URL && !SUPABASE_PROJECT_URL.includes("your-project-id")) {
                 dbClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_ANON);
                 isSupabaseConfigured = true;
-                console.log("Supabase infrastructure synced.");
             }
-        } catch(e) { console.warn("Using local shared mock variables state."); }
+        } catch(e) { console.warn("Using local shared variables state."); }
 
-        // Core App Cache Layers
+        // Cache Arrays
         let cart = [];
         let activeCustomer = null;
         let foodCourtStalls = [];
         let globalCachedOrders = JSON.parse(localStorage.getItem('globalCachedOrders')) || [];
         let globalStallMenus = JSON.parse(localStorage.getItem('globalStallMenus')) || {};
         let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
-        
-        let currentStallSequences = JSON.parse(localStorage.getItem('currentStallSequences')) || {
-            "Taco Stand": { prefix: "TC", seq: 1 },
-            "Wok & Roll Asian Kitchen": { prefix: "WK", seq: 12 },
-            "Bella Italia Pasta Counter": { prefix: "BI", seq: 8 },
-            "The Spud Shack & Grill": { prefix: "SP", seq: 41 }
-        };
+        let currentStallSequences = JSON.parse(localStorage.getItem('currentStallSequences')) || {};
 
-        const BASELINE_MOCK_DATA = {
-            "Taco Stand": [
-                { id: "base-tc-1", name: "French Fries", price: "100", category: "French Fries", addons: [{ name: "Cheese Dip", price: "20" }] }
-            ],
-            "Wok & Roll Asian Kitchen": [
-                { id: "base-wk-1", name: "Spicy Thai Basil Chicken", price: "240", category: "Chicken", addons: [{ name: "Extra Egg", price: "30" }] },
-                { id: "base-wk-2", name: "Szechuan Beef Noodles", price: "280", category: "Beef", addons: [{ name: "Extra Bok Choy", price: "20" }] }
-            ],
-            "Bella Italia Pasta Counter": [
-                { id: "base-bi-1", name: "Four-Cheese Creamy Pasta", price: "320", category: "Pasta", addons: [{ name: "Garlic Toast", price: "40" }] },
-                { id: "base-bi-2", name: "Truffle Mushroom Pizza", price: "450", category: "Pizza", addons: [{ name: "Extra Mozzarella", price: "60" }] }
-            ],
-            "The Spud Shack & Grill": [
-                { id: "base-sp-1", name: "Barbecue Loaded Potato Skins", price: "190", category: "Beef", addons: [{ name: "Bacon Bits", price: "50" }] },
-                { id: "base-sp-2", name: "Chocolate Lava Fudge Sundae", price: "150", category: "Dessert", addons: [{ name: "Vanilla Scoop", price: "30" }] }
-            ]
-        };
-
-        // Diversified Matrix Lists to guarantee unique asset links and avoid image duplication errors
-        const ASSET_IMAGE_ROUTER = {
-            "french fries": [
-                "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&auto=format&fit=crop&q=80"
-            ],
-            "pizza": [
-                "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=500&auto=format&fit=crop&q=80"
-            ],
-            "beef": [
-                "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=500&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=500&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1624246380854-41d66acc2901?w=500&auto=format&fit=crop&q=80"
-            ],
-            "pasta": [
-                "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=500&auto=format&fit=crop&q=80"
-            ],
-            "dessert": [
-                "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=500&auto=format&fit=crop&q=80"
-            ],
-            "chicken": [
-                "https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=500&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1562967914-608f82629710?w=500&auto=format&fit=crop&q=80"
-            ]
-        };
-
-        function fetchTargetVisualSource(itemName, categoryName, indexCount = 0) {
-            const keyLabel = itemName.toLowerCase();
-            const catLabel = categoryName ? categoryName.toLowerCase() : "";
-            
-            let pool = [];
-            if (ASSET_IMAGE_ROUTER[keyLabel]) pool = ASSET_IMAGE_ROUTER[keyLabel];
-            else if (ASSET_IMAGE_ROUTER[catLabel]) pool = ASSET_IMAGE_ROUTER[catLabel];
-            
-            if (pool && pool.length > 0) {
-                return pool[indexCount % pool.length];
-            }
-            return "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80";
-        }
-
-        let activeStagingPayload = null; 
-
-        window.onbeforeunload = function() {
-            wipeKdsAuthInputBoxes();
-        };
+        // Clean slate initial baseline data structure (Predefined stalls removed per request)
+        const BASELINE_MOCK_DATA = {};
 
         function wipeKdsAuthInputBoxes() {
             const userBox = document.getElementById('auth-username');
@@ -426,7 +362,6 @@
             document.getElementById('auth-login-btn').addEventListener('click', processKdsSecurityAccessCheck);
             document.getElementById('exit-kiosk-btn').addEventListener('click', returnToMainGateway);
             
-            // SECURITY PATCH: Clicking Go to Kiosk automatically logs out active KDS, destroys token data, and purges inputs
             document.getElementById('hub-to-kiosk-shortcut-btn').addEventListener('click', () => {
                 sessionStorage.removeItem('activeHubUser');
                 activeUserSession = null;
@@ -456,7 +391,8 @@
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.category-card').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    document.getElementById('food-search-input').value = btn.getAttribute('data-category');
+                    const selectedCat = btn.getAttribute('data-category');
+                    document.getElementById('food-search-input').value = (selectedCat === "ALL") ? "" : selectedCat;
                     pullMealsFromWebDatabase();
                 });
             });
@@ -486,24 +422,15 @@
                     let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false }).limit(15);
                     if (data) globalCachedOrders = data;
                 } catch(e) { console.log(e); }
-
-                dbClient.channel('kiosk-view-sync').on('postgres_changes', { event: '*', table: 'orders' }, payload => {
-                    if (payload.eventType === 'INSERT') globalCachedOrders.unshift(payload.new);
-                    if (payload.eventType === 'UPDATE') {
-                        const idx = globalCachedOrders.findIndex(o => o.orderId === payload.new.orderId);
-                        if (idx !== -1) globalCachedOrders[idx] = payload.new;
-                    }
-                    localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
-                    updateHistoryDashboardUI();
-                }).subscribe();
             }
             updateHistoryDashboardUI();
+            pullMealsFromWebDatabase(); // Auto loads custom food options immediately
         }
 
         function saveCustomerSessionProfile() {
             const name = document.getElementById('cust-name-input').value.trim();
             const phone = document.getElementById('cust-phone-input').value.trim();
-            if (!name || phone.length !== 10 || isNaN(phone)) return alert("Input a valid name and a 10-digit mobile identifier.");
+            if (!name || phone.length !== 10 || isNaN(phone)) return alert("Input a valid name and 10-digit mobile identifier.");
             
             activeCustomer = { name, phone };
             document.getElementById('cust-name-input').disabled = true;
@@ -515,71 +442,38 @@
             banner.style.background = "#e8f8f5"; banner.style.color = "#2ecc71";
         }
 
-        async function pullMealsFromWebDatabase() {
-            const term = document.getElementById('food-search-input').value.trim();
-            if (!term) return;
+        /* 🛑 MEALDB API COMPLETELY SCRAPPED HERE — SEARCHES EXCLUSIVELY LOCAL PROVISIONED STALL ITEMS */
+        function pullMealsFromWebDatabase() {
+            const term = document.getElementById('food-search-input').value.trim().toLowerCase();
             const msg = document.getElementById('status-message');
-            msg.textContent = `🔍 Querying items catalog matching "${term}"...`;
             
             let combinedResults = [];
-            let imageIndexTracker = 0;
 
             Object.keys(globalStallMenus).forEach(stallName => {
                 if (!foodCourtStalls.includes(stallName)) return; 
 
                 globalStallMenus[stallName].forEach(item => {
-                    if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
+                    const matchTerm = !term || item.category.toLowerCase().includes(term) || item.name.toLowerCase().includes(term);
+                    if (matchTerm) {
                         combinedResults.push({
-                            isCustom: true, idMeal: item.id, strMeal: item.name,
-                            strMealThumb: fetchTargetVisualSource(item.name, item.category, imageIndexTracker++),
-                            customCost: item.price, customStall: stallName, customAddons: item.addons || []
+                            idMeal: item.id, 
+                            strMeal: item.name,
+                            strMealThumb: item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500", // Exact Custom Image Link Used
+                            customCost: item.price, 
+                            customStall: stallName, 
+                            customAddons: item.addons || []
                         });
                     }
                 });
             });
 
-            try {
-                let res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(term)}`);
-                let data = await res.json();
-                if (!data.meals) {
-                    res = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(term)}`);
-                    data = await res.json();
-                }
-                if (data.meals) {
-                    data.meals.forEach((meal, i) => {
-                        const cost = Math.max(120, Math.min(((parseInt(meal.idMeal || "52771") % 300) + 140), 650));
-                        const stall = foodCourtStalls[Math.abs(meal.strMeal.charCodeAt(0) + i) % foodCourtStalls.length] || "Global Counter";
-                        
-                        if (foodCourtStalls.includes(stall) && !combinedResults.some(r => r.strMeal.toLowerCase() === meal.strMeal.toLowerCase())) {
-                            combinedResults.push({
-                                isCustom: false, idMeal: meal.idMeal, strMeal: meal.strMeal, 
-                                strMealThumb: fetchTargetVisualSource(meal.strMeal, term, imageIndexTracker++),
-                                customCost: cost, customStall: stall,
-                                customAddons: [
-                                    { name: "Layered Cheddar Cheese", price: "40" },
-                                    { name: "Jumbo Upgrade Pack", price: "60" }
-                                ]
-                            });
-                        }
-                    });
-                }
-            } catch { console.warn("External dictionary connectivity offline."); }
-
             if (combinedResults.length === 0) {
-                Object.keys(globalStallMenus).forEach(stallName => {
-                    if (!foodCourtStalls.includes(stallName)) return;
-                    globalStallMenus[stallName].forEach(item => {
-                        combinedResults.push({
-                            isCustom: true, idMeal: item.id, strMeal: item.name,
-                            strMealThumb: fetchTargetVisualSource(item.name, item.category, imageIndexTracker++),
-                            customCost: item.price, customStall: stallName, customAddons: item.addons || []
-                        });
-                    });
-                });
+                msg.textContent = term ? `❌ Zero matches found for "${term}" in your active stalls.` : "🥣 No food items registered yet. Please create stalls and items in KDS Hub.";
+                document.getElementById('recipe-grid').innerHTML = '';
+                return;
             }
 
-            if (combinedResults.length === 0) return msg.textContent = "❌ Zero matches located. Try alternative options.";
-            msg.textContent = ` Loaded ${combinedResults.length} listings for "${term}":`;
+            msg.textContent = term ? `Loaded ${combinedResults.length} matching selections for "${term}":` : `Displaying all ${combinedResults.length} menu delicacies:`;
             displayMealCardsUI(combinedResults);
         }
 
@@ -588,10 +482,10 @@
             meals.forEach((meal) => {
                 const card = document.createElement('div'); card.className = "meal-card";
                 card.innerHTML = `
-                    <img src="${meal.strMealThumb}" style="width:100%; height:150px; object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300';">
+                    <img src="${meal.strMealThumb}" style="width:100%; height:180px; object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300';">
                     <div style="padding:15px; display:flex; flex-direction:column; flex:1; justify-content:space-between;">
                         <div><span class="stall-tag">${meal.customStall}</span><h4 style="margin:5px 0; font-size:0.95rem;">${meal.strMeal}</h4></div>
-                        <div><p style="font-weight:900; margin:5px 0;">₹${meal.customCost}</p><button class="select-btn">Select Item</button></div>
+                        <div><p style="font-weight:900; margin:5px 0; color:#2c3e50;">₹${meal.customCost}</p><button class="select-btn">Select Item</button></div>
                     </div>`;
                 card.querySelector('.select-btn').onclick = () => triggerCustomizationModal(meal);
                 grid.appendChild(card);
@@ -774,13 +668,7 @@
         }
 
         async function fetchOperationalStallData() {
-            const defaultStalls = [
-                { name: "Taco Stand", prefix: "TC", secret: "taco123" },
-                { name: "Wok & Roll Asian Kitchen", prefix: "WK", secret: "wok123" },
-                { name: "Bella Italia Pasta Counter", prefix: "BI", secret: "pasta123" },
-                { name: "The Spud Shack & Grill", prefix: "SP", secret: "spud123" }
-            ];
-            
+            const defaultStalls = []; // Clean state start
             const savedStalls = JSON.parse(localStorage.getItem('allStallsRegistry'));
             
             if (isSupabaseConfigured) {
@@ -830,18 +718,6 @@
                         globalCachedOrders = data;
                         localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
                     }
-                    
-                    dbClient.channel('kds-stream-sync').on('postgres_changes', { event: '*', table: 'orders' }, payload => {
-                        if (payload.eventType === 'INSERT') globalCachedOrders.unshift(payload.new);
-                        if (payload.eventType === 'UPDATE') {
-                            const idx = globalCachedOrders.findIndex(o => o.orderId === payload.new.orderId);
-                            if (idx !== -1) globalCachedOrders[idx] = payload.new;
-                        }
-                        if (payload.eventType === 'DELETE') globalCachedOrders = globalCachedOrders.filter(o => o.orderId !== payload.old.orderId);
-                        localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
-                        renderKDSTicketsGrid();
-                        if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
-                    }).subscribe();
                 } catch(e) { console.log(e); }
             }
             renderKDSTicketsGrid();
@@ -890,6 +766,7 @@
             const name = document.getElementById('food-name').value.trim();
             const price = document.getElementById('food-price').value.trim();
             const category = document.getElementById('food-category').value;
+            const imageUrl = document.getElementById('food-image-url').value.trim(); // Reads pasted image link
             
             const addonNames = document.querySelectorAll('.addon-name-input');
             const addonPrices = document.querySelectorAll('.addon-price-input');
@@ -905,10 +782,10 @@
             if (targetItemId) {
                 const itemIdx = globalStallMenus[activeUserSession.username].findIndex(i => i.id === targetItemId);
                 if (itemIdx !== -1) {
-                    globalStallMenus[activeUserSession.username][itemIdx] = { id: targetItemId, name, price, category, addons: parsedAddons };
+                    globalStallMenus[activeUserSession.username][itemIdx] = { id: targetItemId, name, price, category, imageUrl, addons: parsedAddons };
                 }
             } else {
-                globalStallMenus[activeUserSession.username].push({ id: 'custom-item-' + Date.now(), name, price, category, addons: parsedAddons });
+                globalStallMenus[activeUserSession.username].push({ id: 'custom-item-' + Date.now(), name, price, category, imageUrl, addons: parsedAddons });
             }
 
             localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
@@ -921,6 +798,7 @@
             document.getElementById('food-name').value = item.name;
             document.getElementById('food-price').value = item.price;
             document.getElementById('food-category').value = item.category;
+            document.getElementById('food-image-url').value = item.imageUrl || "";
             
             const container = document.getElementById('addons-container');
             container.innerHTML = '';
@@ -947,7 +825,7 @@
             const items = globalStallMenus[stallName] || [];
 
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom menu items built yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom menu items built yet.</td></tr>`;
                 return;
             }
 
@@ -956,6 +834,7 @@
                 let addonsChips = item.addons.map(a => `<span style="display:inline-block; font-size:0.7rem; background:#ebf5fb; color:#2980b9; padding:2px 6px; border-radius:4px; margin-right:4px;">${a.name} (+₹${a.price})</span>`).join('');
                 
                 tr.innerHTML = `
+                    <td style="padding:8px; border:1px solid #ddd;"><img src="${item.imageUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100';"></td>
                     <td style="padding:8px; border:1px solid #ddd; font-weight:bold;">${item.name}</td>
                     <td style="padding:8px; border:1px solid #ddd;"><span class="stall-tag" style="background:#34495e;">${item.category}</span></td>
                     <td style="padding:8px; border:1px solid #ddd; font-weight:bold; color:#e74c3c;">₹${item.price}</td>
@@ -1000,10 +879,6 @@
                         s.dismissed = isDone; if (!isDone) s.etaMinutes = 0;
                         localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
                         renderKDSTicketsGrid();
-                        
-                        if (isSupabaseConfigured) {
-                            try { await dbClient.from('orders').update({ stalls: order.stalls }).eq('orderId', order.orderId); } catch(e){}
-                        }
                     };
                     if (isDone) { rBox.appendChild(card); rC++; } else { pBox.appendChild(card); pC++; }
                 });
@@ -1070,17 +945,12 @@
             document.getElementById('new-stall-name').value = '';
             document.getElementById('new-stall-prefix').value = '';
             document.getElementById('new-stall-password').value = '';
-            
-            if (isSupabaseConfigured) {
-                try { await dbClient.from('stalls').insert([{ name, secret }]); } catch(e){}
-            }
         }
 
         async function adminClearGlobalDataLog() {
             if (confirm("Permanently purge operational system metrics logs?")) {
                 globalCachedOrders = []; localStorage.setItem('globalCachedOrders', JSON.stringify([]));
                 renderKDSTicketsGrid(); if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
-                if (isSupabaseConfigured) { try { await dbClient.from('orders').delete().neq('orderId', 'WIPE'); } catch(e){} }
             }
         }
 
