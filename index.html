@@ -6,6 +6,7 @@
     <title>IngredChef Hub</title>
     <link rel="icon" type="image/png" href="IngredChef_Logo.png">
     
+    <!-- Supabase CDN Client Library Dependency Injector -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -214,6 +215,7 @@
 </head>
 <body>
 
+    <!-- CENTRAL GATEWAY SCREEN -->
     <div id="view-gateway" class="gateway-screen">
         <div class="gateway-card">
             <div class="gateway-logo-container">
@@ -226,6 +228,7 @@
         </div>
     </div>
 
+    <!-- KDS SECURITY ACCESS GATEWAY -->
     <div id="kds-auth-screen" class="auth-overlay hidden">
         <div class="auth-card">
             <h3 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">🔒 KDS Security Gateway</h3>
@@ -241,6 +244,7 @@
         </div>
     </div>
 
+    <!-- VIEW STATE A: CUSTOMER ORDERING KIOSK INTERFACE -->
     <div id="view-customer-kiosk" class="hidden">
         <header class="app-header">
             <div style="display:flex; align-items:center; gap:15px;">
@@ -271,6 +275,7 @@
                 </div>
                 <div id="recipe-grid" class="cards-grid"></div>
                 
+                <!-- LIVE AUDIT LEDGER -->
                 <section style="margin-top:40px; background:white; padding:20px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:10px;">
                         <h3 style="color:#2c3e50; margin:0;">📋 Live Transaction Audit Logs</h3>
@@ -295,6 +300,7 @@
         </div>
     </div>
 
+    <!-- VIEW STATE B: KITCHEN DISPLAY SYSTEM (KDS) & HUB -->
     <div id="view-kitchen-hub" class="hidden">
         <header class="app-header" style="background:#2c3e50; padding:10px 20px;">
             <div style="display:flex; align-items:center; gap:15px;">
@@ -306,6 +312,7 @@
 
         <div style="padding:30px; max-width:1600px; margin:0 auto;">
             
+            <!-- STALL OWNER VIEW ONLY (Hidden for Admin) -->
             <section id="stall-menu-manager" class="hidden" style="background: white; border: 1px solid #cbd5e1; padding:20px; border-radius:8px; margin-bottom:20px;">
                 <div class="metrics-grid">
                     <div class="metric-card" style="border-top: 4px solid #2ecc71;">
@@ -338,6 +345,7 @@
                 </table>
             </section>
 
+            <!-- CENTRAL ADMIN MASTER CONTROL NODE (Hidden for Stalls) -->
             <section id="central-admin-view" class="hidden" style="background: white; border: 1px solid #cbd5e1; padding:20px; border-radius:8px; margin-bottom:20px;">
                 <h2 style="color: var(--primary-dark); border-bottom: 2px solid var(--primary-dark); padding-bottom: 10px; margin-bottom:15px;">💎 System Master Control Node</h2>
                 
@@ -356,6 +364,7 @@
                 </div>
             </section>
 
+            <!-- PERSISTENT APP LEDGER HISTORY STACK -->
             <section style="background:white; padding:20px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:20px;">
                 <h3 style="color:var(--primary-dark); margin-bottom:15px;" id="ledger-title-text">📊 Transaction History Stream</h3>
                 <table class="ledger-table">
@@ -366,6 +375,7 @@
                 </table>
             </section>
 
+            <!-- KDS OPERATIONAL TICKETS RAIL GRID -->
             <section id="kitchen-display-view">
                 <h2 style="color:#2c3e50; margin-bottom:15px;">🍳 Ticket Dispatch Preparation Rails</h2>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:25px;">
@@ -376,6 +386,7 @@
         </div>
     </div>
 
+    <!-- PAYMENTS GATEWAY OVERLAY MODAL -->
     <div id="checkout-gateway-modal" class="modal-backdrop hidden">
         <div class="modal-card" style="padding:25px; text-align:center;">
             <h3>Secure Gateway Terminal</h3>
@@ -388,462 +399,473 @@
         </div>
     </div>
 
+    <!-- ==========================================================================
+       7. CORE SYSTEM ARCHITECTURE RUNTIME SCRIPT
+       ========================================================================== -->
     <script>
         // 1. Supabase Initialization Setup Base Parameter Elements 
-        const SUPABASE_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co"; 
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE";
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Core Application State Memory Matrices
-        let globalStalls = [];
-        let globalDishes = [];
-        let globalOrders = [];
-        let activeKdsUser = null; // Stores either 'admin' or Stall Prefix string
-        let selectedCategory = "ALL";
-        let currentBasket = [];
-        let clientProfile = { name: "", phone: "" };
+// Core Application State Memory Matrices
+let globalStalls = [];
+let globalDishes = [];
+let globalOrders = [];
+let activeKdsUser = null; 
+let selectedCategory = "ALL";
+let currentBasket = [];
+let clientProfile = { name: "", phone: "" };
 
-        // 2. Initialization Loop Engine Onload
-        window.addEventListener('DOMContentLoaded', async () => {
-            await synchronizeSystemDataEngine();
-            renderCustomerMenuCatalog();
-            setupPasswordToggleSwitch();
-        });
+// 2. Initialization Loop Engine Onload
+window.addEventListener('DOMContentLoaded', async () => {
+    await synchronizeSystemDataEngine();
+    renderCustomerMenuCatalog();
+    setupPasswordToggleSwitch();
+});
 
-        async function synchronizeSystemDataEngine() {
-            try {
-                const stallsRes = await _supabase.from('stalls').select('*').order('name');
-                globalStalls = stallsRes.data || [];
-                
-                const dishesRes = await _supabase.from('dishes').select('*');
-                globalDishes = dishesRes.data || [];
+// CRITICAL PIPELINE: Fetches directly from Supabase to force refresh the DOM state
+async function synchronizeSystemDataEngine() {
+    try {
+        const stallsRes = await _supabase.from('stalls').select('*').order('name');
+        globalStalls = stallsRes.data || [];
+        
+        const dishesRes = await _supabase.from('dishes').select('*');
+        globalDishes = dishesRes.data || [];
 
-                const ordersRes = await _supabase.from('orders').select('*').order('created_at', { ascending: false });
-                globalOrders = ordersRes.data || [];
-                
-                renderLiveLedgerTables();
-            } catch(e) {
-                console.error("Critical Sync Fault Tracker Exception: ", e);
-            }
-        }
-
-        // 3. Password Field Eye Toggle Functional Logic Hook Handler
-        function setupPasswordToggleSwitch() {
-            const toggleTrigger = document.getElementById('kds-password-toggle');
-            const passwordInput = document.getElementById('auth-password');
-            
-            if (toggleTrigger && passwordInput) {
-                toggleTrigger.addEventListener('click', () => {
-                    if (passwordInput.type === 'password') {
-                        passwordInput.type = 'text';
-                        toggleTrigger.textContent = '🙈';
-                    } else {
-                        passwordInput.type = 'password';
-                        toggleTrigger.textContent = '👁️';
-                    }
-                });
-            }
-        }
-
-        // 4. Client Core Authentication Routing Engine Rules
-        document.getElementById('gate-to-customer-btn')?.addEventListener('click', () => {
-            document.getElementById('view-gateway').style.display = 'none';
-            document.getElementById('view-customer-kiosk').classList.remove('hidden');
-        });
-        document.getElementById('gate-to-kitchen-btn')?.addEventListener('click', () => {
-            document.getElementById('kds-auth-screen').classList.remove('hidden');
-        });
-        document.getElementById('auth-cancel-btn')?.addEventListener('click', () => {
-            document.getElementById('kds-auth-screen').classList.add('hidden');
-        });
-
-        document.getElementById('auth-login-btn')?.addEventListener('click', () => {
-            const userBox = document.getElementById('auth-username');
-            const passBox = document.getElementById('auth-password');
-            const inputUser = userBox.value.trim().toLowerCase();
-            const inputPass = passBox.value;
-
-            if(inputUser === 'admin' && inputPass === 'admin123') {
-                bootKdsDashboardSession('admin');
-            } else {
-                const matchingStall = globalStalls.find(s => s.prefix.toLowerCase() === inputUser && s.password === inputPass);
-                if(matchingStall) {
-                    bootKdsDashboardSession(matchingStall.prefix.toUpperCase());
-                } else {
-                    alert("Security credentials refused. Check assignment tokens.");
-                }
-            }
-        });
-
-        // 5. Secure Session Builder & UI Tree Branch Layout Generation
-        function bootKdsDashboardSession(roleMode) {
-            activeKdsUser = roleMode;
-            document.getElementById('kds-auth-screen').classList.add('hidden');
-            document.getElementById('view-gateway').style.display = 'none';
-            document.getElementById('view-kitchen-hub').classList.remove('hidden');
-            document.getElementById('active-session-identity').textContent = `Session: ${roleMode}`;
-
-            const adminSection = document.getElementById('central-admin-view');
-            const stallSection = document.getElementById('stall-menu-manager');
-
-            if(roleMode === 'admin') {
-                adminSection.classList.remove('hidden');
-                stallSection.classList.add('hidden');
-                document.getElementById('ledger-title-text').textContent = "📊 Cloud Central Terminal Audit History (All Stalls)";
-                renderAdminStallsTable();
-            } else {
-                adminSection.classList.add('hidden');
-                stallSection.classList.remove('hidden');
-                document.getElementById('ledger-title-text').textContent = `📊 Isolated Audit Log History (${roleMode} Counter Only)`;
-                renderStallIsolatedInterface();
-            }
-
-            renderLiveLedgerTables();
-            renderKdsOperationalRails();
-        }
-
-        // 6. Complete Session Clean Refresh Reset on Logout Execution Node
-        document.getElementById('hub-logout-btn')?.addEventListener('click', () => {
-            // Explicitly clear login credentials and input elements
-            activeKdsUser = null;
-            const userBox = document.getElementById('auth-username');
-            const passBox = document.getElementById('auth-password');
-            if (userBox) userBox.value = '';
-            if (passBox) {
-                passBox.value = '';
-                passBox.type = 'password'; // Revert back to hidden password format type
-            }
-            const toggleTrigger = document.getElementById('kds-password-toggle');
-            if(toggleTrigger) toggleTrigger.textContent = '👁️';
-
-            // Swap out structural container screens back to central terminal loop
-            document.getElementById('view-kitchen-hub').classList.add('hidden');
-            document.getElementById('view-gateway').style.display = 'flex';
-        });
-
-        document.getElementById('exit-kiosk-btn')?.addEventListener('click', () => {
-            document.getElementById('view-customer-kiosk').classList.add('hidden');
-            document.getElementById('view-gateway').style.display = 'flex';
-        });
-
-        // 7. Admin UI Rendering Engine Block
-        function renderAdminStallsTable() {
-            const container = document.getElementById('admin-vendor-list');
-            if(!container) return;
-
-            container.innerHTML = globalStalls.map(stall => {
-                // Calculate individual stall sales total based on orders mapping containing elements for that stall
-                const stallTotalSales = globalOrders.reduce((sum, order) => {
-                    try {
-                        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                        const matchCost = items.reduce((acc, i) => i.stall === stall.prefix ? acc + (i.price * i.qty) : acc, 0);
-                        return sum + matchCost;
-                    } catch(e) { return sum; }
-                }, 0);
-
-                return `
-                    <div class="vendor-tracking-row">
-                        <div class="vendor-meta">
-                            <h5>${stall.name} [${stall.prefix}]</h5>
-                            <span>Current Total Sales Volume: <strong>₹${stallTotalSales}</strong></span>
-                        </div>
-                        <button class="action-btn-red" onclick="deleteStallNode('${stall.id}')">Revoke Access</button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        document.getElementById('commit-add-stall-btn')?.addEventListener('click', async () => {
-            const name = document.getElementById('new-stall-name').value.trim();
-            const prefix = document.getElementById('new-stall-prefix').value.trim().toUpperCase();
-            const pass = document.getElementById('new-stall-password').value;
-
-            if(!name || !prefix || !pass) return alert("Fill all operational credentials to register shop.");
-
-            const { error } = await _supabase.from('stalls').insert([{ name, prefix, password: pass, revenue_share: "10%" }]);
-            if(error) return alert("Unique constraint conflict metadata matching target prefix encountered.");
-
-            document.getElementById('new-stall-name').value = '';
-            document.getElementById('new-stall-prefix').value = '';
-            document.getElementById('new-stall-password').value = '';
-            
-            await synchronizeSystemDataEngine();
+        const ordersRes = await _supabase.from('orders').select('*').order('created_at', { ascending: false });
+        globalOrders = ordersRes.data || [];
+        
+        // Re-render layout blocks based on updated cloud database arrays
+        renderLiveLedgerTables();
+        if(activeKdsUser === 'admin') {
             renderAdminStallsTable();
-        });
-
-        window.deleteStallNode = async function(id) {
-            if(!confirm("Revoke credentials for this store outlet node?")) return;
-            await _supabase.from('stalls').delete().eq('id', id);
-            await synchronizeSystemDataEngine();
-            renderAdminStallsTable();
-        };
-
-        // 8. Stall Owner Dynamic Processing Views
-        function renderStallIsolatedInterface() {
-            const menuBody = document.getElementById('stall-menu-table-body');
-            const myItems = globalDishes.filter(d => d.stall_prefix === activeKdsUser);
-            
-            menuBody.innerHTML = myItems.map(i => `
-                <tr>
-                    <td><strong>${i.name}</strong></td>
-                    <td>${i.category}</td>
-                    <td>₹${i.price}</td>
-                </tr>
-            `).join('');
-
-            // Calculate current specific stall total sales volume context matching items mapping array definitions
-            const totalSalesVal = globalOrders.reduce((sum, order) => {
-                try {
-                    const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                    const stallContribution = items.reduce((acc, i) => i.stall === activeKdsUser ? acc + (i.price * i.qty) : acc, 0);
-                    return sum + stallContribution;
-                } catch(e) { return sum; }
-            }, 0);
-
-            document.getElementById('stall-sales-display').textContent = `₹${totalSalesVal}`;
-        }
-
-        document.getElementById('menu-item-form')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('food-name').value.trim();
-            const price = parseInt(document.getElementById('food-price').value);
-            const category = document.getElementById('food-category').value;
-            const img = document.getElementById('food-image-url').value.trim();
-
-            await _supabase.from('dishes').insert([{ name, price, category, image_url: img, stall_prefix: activeKdsUser }]);
-            
-            document.getElementById('menu-item-form').reset();
-            await synchronizeSystemDataEngine();
+        } else if(activeKdsUser) {
             renderStallIsolatedInterface();
-        });
-
-        // 9. Central Ledger Stream Pipeline Visual Component Elements Generator
-        function renderLiveLedgerTables() {
-            const customerBody = document.getElementById('customer-live-ledger-body');
-            const hubBody = document.getElementById('hub-live-ledger-body');
-            
-            let filteredOrders = [...globalOrders];
-            if(activeKdsUser && activeKdsUser !== 'admin') {
-                // If it is a stall login context stream array element validation routine parsing checks
-                filteredOrders = globalOrders.filter(order => {
-                    try {
-                        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                        return items.some(i => i.stall === activeKdsUser);
-                    } catch(e) { return false; }
-                });
-            }
-
-            const buildRowHtml = (order) => {
-                let itemSummary = "";
-                let renderedPrice = order.total_amount;
-                try {
-                    const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                    
-                    if(activeKdsUser && activeKdsUser !== 'admin') {
-                        const targets = items.filter(i => i.stall === activeKdsUser);
-                        itemSummary = targets.map(i => `${i.name} (x${i.qty})`).join(', ');
-                        renderedPrice = targets.reduce((a, b) => a + (b.price * b.qty), 0);
-                    } else {
-                        itemSummary = items.map(i => `${i.name} (x${i.qty})`).join(', ');
-                    }
-                } catch(e) { itemSummary = "Error parsing item list"; }
-
-                return `
-                    <tr>
-                        <td>${new Date(order.created_at).toLocaleTimeString()}</td>
-                        <td><strong style="color:var(--primary-accent);">${order.order_ref || 'IC-REF'}</strong></td>
-                        <td>${order.customer_name || 'Walk-In'} (${order.customer_phone || 'N/A'})</td>
-                        <td>${itemSummary}</td>
-                        <td><strong>₹${renderedPrice}</strong></td>
-                    </tr>
-                `;
-            };
-
-            if(customerBody) customerBody.innerHTML = globalOrders.slice(0, 5).map(buildRowHtml).join('');
-            if(hubBody) hubBody.innerHTML = filteredOrders.map(buildRowHtml).join('');
         }
+        renderKdsOperationalRails();
+    } catch(e) {
+        console.error("Critical Sync Fault Tracker Exception: ", e);
+    }
+}
 
-        // 10. Customer Order Placement & Kiosk Flow System Layout
-        document.getElementById('register-cust-btn')?.addEventListener('click', () => {
-            const name = document.getElementById('cust-name-input').value.trim();
-            const phone = document.getElementById('cust-phone-input').value.trim();
-
-            if(!name || phone.length < 10) return alert("Enter correct structural identity fields validation params.");
-            clientProfile = { name, phone };
-            
-            document.getElementById('session-status-text').className = "status-banner";
-            document.getElementById('session-status-text').style.background = "#d4edda";
-            document.getElementById('session-status-text').style.color = "#155724";
-            document.getElementById('session-status-text').textContent = `Linked Connection Session Profile: Customer: ${name} (${phone})`;
-        });
-
-        function renderCustomerMenuCatalog() {
-            const grid = document.getElementById('recipe-grid');
-            if(!grid) return;
-
-            const targets = selectedCategory === 'ALL' ? globalDishes : globalDishes.filter(d => d.category === selectedCategory);
-            
-            if(targets.length === 0) {
-                grid.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-muted); width:100%;">No dishes listed in this category stream block yet.</p>`;
-                return;
-            }
-
-            grid.innerHTML = targets.map(dish => `
-                <div class="meal-card">
-                    <img src="${dish.image_url}" alt="${dish.name}" style="width:100%; height:140px; object-fit:cover;">
-                    <div style="padding:12px;">
-                        <span class="stall-tag">${dish.stall_prefix || 'Outlet'}</span>
-                        <h4 style="margin:4px 0;">${dish.name}</h4>
-                        <h3 style="color:var(--primary-dark)">₹${dish.price}</h3>
-                        <button class="select-btn" onclick="addItemToBasket(${dish.id})">Add to Order</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        document.querySelectorAll('.category-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
-                e.target.classList.add('active');
-                selectedCategory = e.target.dataset.category;
-                renderCustomerMenuCatalog();
-            });
-        });
-
-        window.addItemToBasket = function(dishId) {
-            const target = globalDishes.find(d => d.id === dishId);
-            if(!target) return;
-
-            const existing = currentBasket.find(i => i.id === dishId);
-            if(existing) {
-                existing.qty++;
+// 3. Password Field Eye Toggle Functional Logic Hook Handler
+function setupPasswordToggleSwitch() {
+    const toggleTrigger = document.getElementById('kds-password-toggle');
+    const passwordInput = document.getElementById('auth-password');
+    
+    if (toggleTrigger && passwordInput) {
+        toggleTrigger.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleTrigger.textContent = '🙈';
             } else {
-                currentBasket.push({ id: target.id, name: target.name, price: target.price, stall: target.stall_prefix, qty: 1 });
+                passwordInput.type = 'password';
+                toggleTrigger.textContent = '👁️';
             }
-            renderBasketTree();
-        };
+        });
+    }
+}
 
-        function renderBasketTree() {
-            const container = document.getElementById('cart-items-container');
-            const totalDisplay = document.getElementById('cart-grand-total');
-            
-            container.innerHTML = currentBasket.map(item => `
-                <div class="basket-item-row">
-                    <div>
-                        <strong>${item.name}</strong><br>
-                        <small style="color:var(--text-muted)">₹${item.price} each [${item.stall}]</small>
-                    </div>
-                    <div>
-                        <span style="font-weight:bold; margin-right:10px;">x${item.qty}</span>
-                        <button class="action-btn-red" style="padding:2px 6px;" onclick="dropItemBasketNode(${item.id})">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
+// 4. Client Core Authentication Routing Engine Rules
+document.getElementById('gate-to-customer-btn')?.addEventListener('click', () => {
+    document.getElementById('view-gateway').style.display = 'none';
+    document.getElementById('view-customer-kiosk').classList.remove('hidden');
+});
+document.getElementById('gate-to-kitchen-btn')?.addEventListener('click', () => {
+    document.getElementById('kds-auth-screen').classList.remove('hidden');
+});
+document.getElementById('auth-cancel-btn')?.addEventListener('click', () => {
+    document.getElementById('kds-auth-screen').classList.add('hidden');
+});
 
-            const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
-            totalDisplay.textContent = `₹${sum}`;
+document.getElementById('auth-login-btn')?.addEventListener('click', () => {
+    const userBox = document.getElementById('auth-username');
+    const passBox = document.getElementById('auth-password');
+    const inputUser = userBox.value.trim().toLowerCase();
+    const inputPass = passBox.value;
+
+    if(inputUser === 'admin' && inputPass === 'admin123') {
+        bootKdsDashboardSession('admin');
+    } else {
+        const matchingStall = globalStalls.find(s => s.prefix.toLowerCase() === inputUser && s.password === inputPass);
+        if(matchingStall) {
+            bootKdsDashboardSession(matchingStall.prefix.toUpperCase());
+        } else {
+            alert("Security credentials refused. Check assignment tokens.");
         }
+    }
+});
 
-        window.dropItemBasketNode = function(id) {
-            currentBasket = currentBasket.filter(i => i.id !== id);
-            renderBasketTree();
-        };
+// 5. Secure Session Builder & UI Tree Branch Layout Generation
+function bootKdsDashboardSession(roleMode) {
+    activeKdsUser = roleMode;
+    document.getElementById('kds-auth-screen').classList.add('hidden');
+    document.getElementById('view-gateway').style.display = 'none';
+    document.getElementById('view-kitchen-hub').classList.remove('hidden');
+    document.getElementById('active-session-identity').textContent = `Session: ${roleMode}`;
 
-        document.getElementById('checkout-btn')?.addEventListener('click', () => {
-            if(currentBasket.length === 0) return alert("Basket container currently holds no menu item lines.");
-            if(!clientProfile.name) return alert("Link customer session telephone tracking fields before processing checkout arrays.");
+    const adminSection = document.getElementById('central-admin-view');
+    const stallSection = document.getElementById('stall-menu-manager');
 
-            const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
-            document.getElementById('checkout-amount-display').textContent = `₹${sum}`;
-            document.getElementById('checkout-gateway-modal').classList.remove('hidden');
+    if(roleMode === 'admin') {
+        adminSection.classList.remove('hidden');
+        stallSection.classList.add('hidden');
+        document.getElementById('ledger-title-text').textContent = "📊 Cloud Central Terminal Audit History (All Stalls)";
+        renderAdminStallsTable();
+    } else {
+        adminSection.classList.add('hidden');
+        stallSection.classList.remove('hidden');
+        document.getElementById('ledger-title-text').textContent = `📊 Isolated Audit Log History (${roleMode} Counter Only)`;
+        renderStallIsolatedInterface();
+    }
+
+    renderLiveLedgerTables();
+    renderKdsOperationalRails();
+}
+
+// 6. Complete Session Clean Refresh Reset on Logout Execution Node
+document.getElementById('hub-logout-btn')?.addEventListener('click', () => {
+    activeKdsUser = null;
+    const userBox = document.getElementById('auth-username');
+    const passBox = document.getElementById('auth-password');
+    if (userBox) userBox.value = '';
+    if (passBox) {
+        passBox.value = '';
+        passBox.type = 'password'; 
+    }
+    const toggleTrigger = document.getElementById('kds-password-toggle');
+    if(toggleTrigger) toggleTrigger.textContent = '👁️';
+
+    document.getElementById('view-kitchen-hub').classList.add('hidden');
+    document.getElementById('view-gateway').style.display = 'flex';
+});
+
+document.getElementById('exit-kiosk-btn')?.addEventListener('click', () => {
+    document.getElementById('view-customer-kiosk').classList.add('hidden');
+    document.getElementById('view-gateway').style.display = 'flex';
+});
+
+// 7. Admin UI Rendering Engine Block
+function renderAdminStallsTable() {
+    const container = document.getElementById('admin-vendor-list');
+    if(!container) return;
+
+    if (globalStalls.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">No registered stalls active.</p>`;
+        return;
+    }
+
+    container.innerHTML = globalStalls.map(stall => {
+        const stallTotalSales = globalOrders.reduce((sum, order) => {
+            try {
+                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                const matchCost = items.reduce((acc, i) => i.stall === stall.prefix ? acc + (i.price * i.qty) : acc, 0);
+                return sum + matchCost;
+            } catch(e) { return sum; }
+        }, 0);
+
+        return `
+            <div class="vendor-tracking-row">
+                <div class="vendor-meta">
+                    <h5>${stall.name} [${stall.prefix}]</h5>
+                    <span>Current Total Sales Volume: <strong>₹${stallTotalSales}</strong></span>
+                </div>
+                <button class="action-btn-red" onclick="deleteStallNode('${stall.id}')">Revoke Access</button>
+            </div>
+        `;
+    }).join('');
+}
+
+document.getElementById('commit-add-stall-btn')?.addEventListener('click', async () => {
+    const name = document.getElementById('new-stall-name').value.trim();
+    const prefix = document.getElementById('new-stall-prefix').value.trim().toUpperCase();
+    const pass = document.getElementById('new-stall-password').value;
+
+    if(!name || !prefix || !pass) return alert("Fill all operational credentials to register shop.");
+
+    // Direct transaction writing to Supabase database
+    const { error } = await _supabase.from('stalls').insert([{ name, prefix, password: pass, revenue_share: "10%" }]);
+    
+    if(error) {
+        // Explicitly triggers a database synchronization anyway to keep the view pristine
+        await synchronizeSystemDataEngine();
+        return alert("Unique constraint conflict metadata matching target prefix or name encountered. This shop code prefix or name is already in use.");
+    }
+
+    document.getElementById('new-stall-name').value = '';
+    document.getElementById('new-stall-prefix').value = '';
+    document.getElementById('new-stall-password').value = '';
+    
+    await synchronizeSystemDataEngine();
+});
+
+window.deleteStallNode = async function(id) {
+    if(!confirm("Revoke credentials for this store outlet node?")) return;
+    await _supabase.from('stalls').delete().eq('id', id);
+    await synchronizeSystemDataEngine();
+};
+
+// 8. Stall Owner Dynamic Processing Views
+function renderStallIsolatedInterface() {
+    const menuBody = document.getElementById('stall-menu-table-body');
+    const myItems = globalDishes.filter(d => d.stall_prefix === activeKdsUser);
+    
+    if(menuBody) {
+        menuBody.innerHTML = myItems.map(i => `
+            <tr>
+                <td><strong>${i.name}</strong></td>
+                <td>${i.category}</td>
+                <td>₹${i.price}</td>
+            </tr>
+        `).join('');
+    }
+
+    const totalSalesVal = globalOrders.reduce((sum, order) => {
+        try {
+            const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+            const stallContribution = items.reduce((acc, i) => i.stall === activeKdsUser ? acc + (i.price * i.qty) : acc, 0);
+            return sum + stallContribution;
+        } catch(e) { return sum; }
+    }, 0);
+
+    const salesDisplay = document.getElementById('stall-sales-display');
+    if(salesDisplay) salesDisplay.textContent = `₹${totalSalesVal}`;
+}
+
+document.getElementById('menu-item-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('food-name').value.trim();
+    const price = parseInt(document.getElementById('food-price').value);
+    const category = document.getElementById('food-category').value;
+    const img = document.getElementById('food-image-url').value.trim();
+
+    await _supabase.from('dishes').insert([{ name, price, category, image_url: img, stall_prefix: activeKdsUser }]);
+    
+    document.getElementById('menu-item-form').reset();
+    await synchronizeSystemDataEngine();
+});
+
+// 9. Central Ledger Stream Pipeline Visual Component Elements Generator
+function renderLiveLedgerTables() {
+    const customerBody = document.getElementById('customer-live-ledger-body');
+    const hubBody = document.getElementById('hub-live-ledger-body');
+    
+    let filteredOrders = [...globalOrders];
+    if(activeKdsUser && activeKdsUser !== 'admin') {
+        filteredOrders = globalOrders.filter(order => {
+            try {
+                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                return items.some(i => i.stall === activeKdsUser);
+            } catch(e) { return false; }
         });
+    }
 
-        document.getElementById('abort-payment-btn')?.addEventListener('click', () => {
-            document.getElementById('checkout-gateway-modal').classList.add('hidden');
-        });
-
-        document.getElementById('simulate-success-btn')?.addEventListener('click', async () => {
-            const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
-            const refCode = "IC-" + Math.floor(1000 + Math.random() * 9000);
-
-            const payload = {
-                order_ref: refCode,
-                customer_name: clientProfile.name,
-                customer_phone: clientProfile.phone,
-                items: JSON.stringify(currentBasket),
-                total_amount: sum,
-                order_status: "COOKING"
-            };
-
-            await _supabase.from('orders').insert([payload]);
-            
-            // Clean dynamic interface arrays parameters elements layout tree maps
-            currentBasket = [];
-            renderBasketTree();
-            document.getElementById('checkout-gateway-modal').classList.add('hidden');
-            
-            await synchronizeSystemDataEngine();
-        });
-
-        // 11. Kitchen Display System (KDS) Operational Pipeline Rendering Matrix
-        function renderKdsOperationalRails() {
-            const pendingContainer = document.getElementById('queue-pending');
-            const readyContainer = document.getElementById('queue-ready');
-            
-            if(!pendingContainer || !readyContainer) return;
-
-            // Compute filter contexts relative to active operational node identities
-            let targetedTickets = globalOrders.filter(o => o.order_status === 'COOKING' || o.order_status === 'READY');
+    const buildRowHtml = (order) => {
+        let itemSummary = "";
+        let renderedPrice = order.total_amount;
+        try {
+            const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
             
             if(activeKdsUser && activeKdsUser !== 'admin') {
-                targetedTickets = targetedTickets.filter(o => {
-                    try {
-                        const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
-                        return items.some(i => i.stall === activeKdsUser);
-                    } catch(e) { return false; }
-                });
+                const targets = items.filter(i => i.stall === activeKdsUser);
+                itemSummary = targets.map(i => `${i.name} (x${i.qty})`).join(', ');
+                renderedPrice = targets.reduce((a, b) => a + (b.price * b.qty), 0);
+            } else {
+                itemSummary = items.map(i => `${i.name} (x${i.qty})`).join(', ');
             }
+        } catch(e) { itemSummary = "Error parsing item list"; }
 
-            const renderTicketCard = (o) => {
-                let itemsListHtml = "";
-                try {
-                    const parsed = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
-                    const itemsToView = (activeKdsUser && activeKdsUser !== 'admin') ? parsed.filter(i => i.stall === activeKdsUser) : parsed;
-                    itemsListHtml = itemsToView.map(i => `<li><strong>${i.name}</strong> x ${i.qty}</li>`).join('');
-                } catch(e) { itemsListHtml = "<li>Error Parsing Ticket</li>"; }
+        return `
+            <tr>
+                <td>${new Date(order.created_at).toLocaleTimeString()}</td>
+                <td><strong style="color:var(--primary-accent);">${order.order_ref || 'IC-REF'}</strong></td>
+                <td>${order.customer_name || 'Walk-In'} (${order.customer_phone || 'N/A'})</td>
+                <td>${itemSummary}</td>
+                <td><strong>₹${renderedPrice}</strong></td>
+            </tr>
+        `;
+    };
 
-                const actionButton = o.order_status === 'COOKING' 
-                    ? `<button class="action-btn-green" style="margin-top:10px;" onclick="advanceTicketState(${o.id}, 'READY')">Dispatch to Ready</button>`
-                    : `<button class="action-btn-red" style="margin-top:10px; background:#7f8c8d;" onclick="advanceTicketState(${o.id}, 'DELIVERED')">Archive Order</button>`;
+    if(customerBody) customerBody.innerHTML = globalOrders.slice(0, 5).map(buildRowHtml).join('');
+    if(hubBody) hubBody.innerHTML = filteredOrders.map(buildRowHtml).join('');
+}
 
-                return `
-                    <div class="kds-ticket">
-                        <div style="display:flex; justify-content:between; align-items:center; margin-bottom:8px;">
-                            <span style="font-weight:800; color:var(--primary-accent); font-size:1.1rem;">${o.order_ref}</span>
-                            <span style="font-size:0.75rem; color:var(--text-muted); margin-left:auto;">${new Date(o.created_at).toLocaleTimeString()}</span>
-                        </div>
-                        <p style="font-size:0.85rem; margin-bottom:6px;">Client: <strong>${o.customer_name}</strong></p>
-                        <ul style="padding-left:15px; font-size:0.9rem; margin-bottom:5px;">${itemsListHtml}</ul>
-                        ${actionButton}
-                    </div>
-                `;
-            };
+// 10. Customer Order Placement & Kiosk Flow System Layout
+document.getElementById('register-cust-btn')?.addEventListener('click', () => {
+    const name = document.getElementById('cust-name-input').value.trim();
+    const phone = document.getElementById('cust-phone-input').value.trim();
 
-            const cookingStack = targetedTickets.filter(o => o.order_status === 'COOKING');
-            const readyStack = targetedTickets.filter(o => o.order_status === 'READY');
+    if(!name || phone.length < 10) return alert("Enter correct structural identity fields validation params.");
+    clientProfile = { name, phone };
+    
+    document.getElementById('session-status-text').className = "status-banner";
+    document.getElementById('session-status-text').style.background = "#d4edda";
+    document.getElementById('session-status-text').style.color = "#155724";
+    document.getElementById('session-status-text').textContent = `Linked Connection Session Profile: Customer: ${name} (${phone})`;
+});
 
-            pendingContainer.innerHTML = cookingStack.map(renderTicketCard).join('') || `<p style='text-align:center; padding:20px; color:var(--text-muted);'>No items cooking</p>`;
-            readyContainer.innerHTML = readyStack.map(renderTicketCard).join('') || `<p style='text-align:center; padding:20px; color:var(--text-muted);'>No items ready</p>`;
-        }
+function renderCustomerMenuCatalog() {
+    const grid = document.getElementById('recipe-grid');
+    if(!grid) return;
 
-        window.advanceTicketState = async function(orderId, targetState) {
-            await _supabase.from('orders').update({ order_status: targetState }).eq('id', orderId);
-            await synchronizeSystemDataEngine();
-            if(activeKdsUser) {
-                if(activeKdsUser !== 'admin') renderStallIsolatedInterface();
-                renderKdsOperationalRails();
-            }
-        };
+    const targets = selectedCategory === 'ALL' ? globalDishes : globalDishes.filter(d => d.category === selectedCategory);
+    
+    if(targets.length === 0) {
+        grid.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-muted); width:100%;">No dishes listed in this category stream block yet.</p>`;
+        return;
+    }
+
+    grid.innerHTML = targets.map(dish => `
+        <div class="meal-card">
+            <img src="${dish.image_url}" alt="${dish.name}" style="width:100%; height:140px; object-fit:cover;">
+            <div style="padding:12px;">
+                <span class="stall-tag">${dish.stall_prefix || 'Outlet'}</span>
+                <h4 style="margin:4px 0;">${dish.name}</h4>
+                <h3 style="color:var(--primary-dark)">₹${dish.price}</h3>
+                <button class="select-btn" onclick="addItemToBasket(${dish.id})">Add to Order</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+document.querySelectorAll('.category-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+        document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedCategory = e.target.dataset.category;
+        renderCustomerMenuCatalog();
+    });
+});
+
+window.addItemToBasket = function(dishId) {
+    const target = globalDishes.find(d => d.id === dishId);
+    if(!target) return;
+
+    const existing = currentBasket.find(i => i.id === dishId);
+    if(existing) {
+        existing.qty++;
+    } else {
+        currentBasket.push({ id: target.id, name: target.name, price: target.price, stall: target.stall_prefix, qty: 1 });
+    }
+    renderBasketTree();
+};
+
+function renderBasketTree() {
+    const container = document.getElementById('cart-items-container');
+    const totalDisplay = document.getElementById('cart-grand-total');
+    
+    container.innerHTML = currentBasket.map(item => `
+        <div class="basket-item-row">
+            <div>
+                <strong>${item.name}</strong><br>
+                <small style="color:var(--text-muted)">₹${item.price} each [${item.stall}]</small>
+            </div>
+            <div>
+                <span style="font-weight:bold; margin-right:10px;">x${item.qty}</span>
+                <button class="action-btn-red" style="padding:2px 6px;" onclick="dropItemBasketNode(${item.id})">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+
+    const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
+    totalDisplay.textContent = `₹${sum}`;
+}
+
+window.dropItemBasketNode = function(id) {
+    currentBasket = currentBasket.filter(i => i.id !== id);
+    renderBasketTree();
+};
+
+document.getElementById('checkout-btn')?.addEventListener('click', () => {
+    if(currentBasket.length === 0) return alert("Basket container currently holds no menu item lines.");
+    if(!clientProfile.name) return alert("Link customer session telephone tracking fields before processing checkout arrays.");
+
+    const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
+    document.getElementById('checkout-amount-display').textContent = `₹${sum}`;
+    document.getElementById('checkout-gateway-modal').classList.remove('hidden');
+});
+
+document.getElementById('abort-payment-btn')?.addEventListener('click', () => {
+    document.getElementById('checkout-gateway-modal').classList.add('hidden');
+});
+
+document.getElementById('simulate-success-btn')?.addEventListener('click', async () => {
+    const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
+    const refCode = "IC-" + Math.floor(1000 + Math.random() * 9000);
+
+    const payload = {
+        order_ref: refCode,
+        customer_name: clientProfile.name,
+        customer_phone: clientProfile.phone,
+        items: JSON.stringify(currentBasket),
+        total_amount: sum,
+        order_status: "COOKING"
+    };
+
+    await _supabase.from('orders').insert([payload]);
+    
+    currentBasket = [];
+    renderBasketTree();
+    document.getElementById('checkout-gateway-modal').classList.add('hidden');
+    
+    await synchronizeSystemDataEngine();
+});
+
+// 11. Kitchen Display System (KDS) Operational Pipeline Rendering Matrix
+function renderKdsOperationalRails() {
+    const pendingContainer = document.getElementById('queue-pending');
+    const readyContainer = document.getElementById('queue-ready');
+    
+    if(!pendingContainer || !readyContainer) return;
+
+    let targetedTickets = globalOrders.filter(o => o.order_status === 'COOKING' || o.order_status === 'READY');
+    
+    if(activeKdsUser && activeKdsUser !== 'admin') {
+        targetedTickets = targetedTickets.filter(o => {
+            try {
+                const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                return items.some(i => i.stall === activeKdsUser);
+            } catch(e) { return false; }
+        });
+    }
+
+    const renderTicketCard = (o) => {
+        let itemsListHtml = "";
+        try {
+            const parsed = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+            const itemsToView = (activeKdsUser && activeKdsUser !== 'admin') ? parsed.filter(i => i.stall === activeKdsUser) : parsed;
+            itemsListHtml = itemsToView.map(i => `<li><strong>${i.name}</strong> x ${i.qty}</li>`).join('');
+        } catch(e) { itemsListHtml = "<li>Error Parsing Ticket</li>"; }
+
+        const actionButton = o.order_status === 'COOKING' 
+            ? `<button class="action-btn-green" style="margin-top:10px;" onclick="advanceTicketState(${o.id}, 'READY')">Dispatch to Ready</button>`
+            : `<button class="action-btn-red" style="margin-top:10px; background:#7f8c8d;" onclick="advanceTicketState(${o.id}, 'DELIVERED')">Archive Order</button>`;
+
+        return `
+            <div class="kds-ticket">
+                <div style="display:flex; justify-content:between; align-items:center; margin-bottom:8px;">
+                    <span style="font-weight:800; color:var(--primary-accent); font-size:1.1rem;">${o.order_ref}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:auto;">${new Date(o.created_at).toLocaleTimeString()}</span>
+                </div>
+                <p style="font-size:0.85rem; margin-bottom:6px;">Client: <strong>${o.customer_name}</strong></p>
+                <ul style="padding-left:15px; font-size:0.9rem; margin-bottom:5px;">${itemsListHtml}</ul>
+                ${actionButton}
+            </div>
+        `;
+    };
+
+    const cookingStack = targetedTickets.filter(o => o.order_status === 'COOKING');
+    const readyStack = targetedTickets.filter(o => o.order_status === 'READY');
+
+    pendingContainer.innerHTML = cookingStack.map(renderTicketCard).join('') || `<p style='text-align:center; padding:20px; color:var(--text-muted);'>No items cooking</p>`;
+    readyContainer.innerHTML = readyStack.map(renderTicketCard).join('') || `<p style='text-align:center; padding:20px; color:var(--text-muted);'>No items ready</p>`;
+}
+
+window.advanceTicketState = async function(orderId, targetState) {
+    await _supabase.from('orders').update({ order_status: targetState }).eq('id', orderId);
+    await synchronizeSystemDataEngine();
+};
     </script>
 </body>
 </html>
