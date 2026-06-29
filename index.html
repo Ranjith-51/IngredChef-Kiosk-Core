@@ -230,10 +230,20 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co"; 
-        const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
-        
+<script>
+    // FIX: Removed any nested pathing loops. Only the pure project domain goes here.
+    const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co"; 
+    const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
+    
+    // This client instantiation will now generate correct endpoints like:
+    // https://fnbvyrkrgltcvpzmnxoo.supabase.co/rest/v1/stalls
+    let dbClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_ANON);
+    
+    let cart = []; let activeCustomer = null; let foodCourtStalls = []; let globalCachedOrders = [];
+    let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
+    let currentStallSequences = JSON.parse(localStorage.getItem('currentStallSequences')) || {};
+    let activeStagingPayload = null;
+    
         let dbClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_ANON);
         let cart = []; let activeCustomer = null; let foodCourtStalls = []; let globalCachedOrders = [];
         let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
