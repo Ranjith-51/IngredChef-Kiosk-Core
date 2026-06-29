@@ -7,7 +7,6 @@
     <link rel="icon" type="image/png" href="IngredChef_Logo.png">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Printable Receipt Styles */
         @media print {
             body * { visibility: hidden; }
             #printable-receipt-area, #printable-receipt-area * { visibility: visible; }
@@ -20,11 +19,13 @@
         .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .metric-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; text-align: center; }
         .metric-value { font-size: 1.8rem; font-weight: bold; color: #2c3e50; margin-top: 5px; }
+        .ledger-table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; font-size: 0.9rem; }
+        .ledger-table th, .ledger-table td { padding: 12px; border: 1px solid #e2e8f0; text-align: left; }
+        .ledger-table th { background: #f1f5f9; color: #475569; }
     </style>
 </head>
 <body>
 
-    <!-- 🚪 CENTRAL GATEWAY SCREEN -->
     <div id="view-gateway" class="gateway-screen">
         <div class="gateway-card">
             <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" class="gateway-brand-logo" onerror="this.style.display='none'; document.getElementById('fallback-avatar').style.display='flex';">
@@ -36,7 +37,6 @@
         </div>
     </div>
 
-    <!-- 🔐 KITCHEN PORTAL AUTHENTICATION MODAL -->
     <div id="kds-auth-screen" class="auth-overlay hidden">
         <div class="auth-card">
             <h3 style="margin-top:0; color:#2c3e50;">🔒 KDS Security Gateway</h3>
@@ -50,7 +50,6 @@
         </div>
     </div>
 
-    <!-- 🛒 VIEW STATE A: CUSTOMER ORDERING KIOSK INTERFACE -->
     <div id="view-customer-kiosk" class="hidden">
         <header class="app-header">
             <div style="display:flex; align-items:center; gap:15px;">
@@ -64,6 +63,7 @@
             </div>
         </header>
         <div id="session-status-text" class="status-banner">⚠️ No profile linked. Please register details before checking out.</div>
+        
         <div class="workspace-grid">
             <main>
                 <section style="margin-bottom:20px;">
@@ -80,7 +80,26 @@
                 </div>
                 <p id="status-message" style="color:#7f8c8d; font-weight:bold;">🥣 Loading dishes...</p>
                 <div id="recipe-grid" class="cards-grid"></div>
+                
+                <section style="margin-top:40px; background:white; padding:20px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                    <h3 style="color:#2c3e50; margin-top:0;">📋 Cloud Database Transmitted Audit Ledger</h3>
+                    <table class="ledger-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Order Reference</th>
+                                <th>Customer Profile</th>
+                                <th>Stall Load Targets</th>
+                                <th>Charged</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customer-live-ledger-body">
+                            <tr><td colspan="5" style="text-align:center; color:#94a3b8;">No registered transactions found in network stream.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
             </main>
+            
             <aside>
                 <div class="basket-box">
                     <h3 style="color:#2c3e50; margin-top:0; border-bottom:2px solid #2c3e50; padding-bottom:8px;">🛒 Basket</h3>
@@ -93,7 +112,6 @@
         </div>
     </div>
 
-    <!-- 🍳 VIEW STATE B: KITCHEN DISPLAY SYSTEM (KDS) -->
     <div id="view-kitchen-hub" class="hidden">
         <header class="app-header" style="background:#2c3e50;">
             <div style="display:flex; align-items:center; gap:15px;">
@@ -107,7 +125,6 @@
 
         <div style="padding:30px; max-width:1600px; margin:0 auto;">
             
-            <!-- 🛠️ INDIVIDUAL STALL MANAGER DASHBOARD -->
             <section id="stall-menu-manager" class="admin-dashboard hidden" style="background: white; border-color: #3498db;">
                 <div class="metrics-grid">
                     <div class="metric-card" style="border-top: 4px solid #2ecc71;">
@@ -119,7 +136,6 @@
                 <p id="current-stall-display" style="font-weight: bold; color: #7f8c8d; font-size: 0.9rem; margin-bottom: 15px;"></p>
                 
                 <form id="menu-item-form" style="background: #fdfefe; border: 1px dashed #3498db; padding: 20px; border-radius: 8px;">
-                    <input type="hidden" id="editing-item-id" value="">
                     <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                         <input type="text" id="food-name" required placeholder="Food Item Name" class="form-input">
                         <input type="number" id="food-price" required min="1" placeholder="Price (₹)" class="form-input">
@@ -129,11 +145,7 @@
                             <option value="Dessert">Dessert</option>
                         </select>
                     </div>
-                    <input type="url" id="food-image-url" required placeholder="Paste exact image web address link" class="form-input">
-                    <div style="background:#f4f6f7; padding:15px; border-radius:6px; margin-bottom:15px;">
-                        <div id="addons-container" style="display:flex; flex-direction:column; gap:8px;"></div>
-                        <button type="button" id="add-addon-row-btn" style="background:none; border:none; color:#3498db; font-weight:bold; cursor:pointer;">+ Append Custom Variant Modification</button>
-                    </div>
+                    <input type="url" id="food-image-url" required placeholder="Paste image address" class="form-input">
                     <button type="submit" id="form-submit-btn" class="action-btn-green" style="width:auto; padding:10px 25px;">Push Item to Active Catalog</button>
                 </form>
 
@@ -145,9 +157,11 @@
                 </table>
             </section>
 
-            <!-- CENTRAL ADMIN MASTER CONTROL -->
             <section id="central-admin-view" class="admin-dashboard hidden">
-                <h2 style="color: #2c3e50; margin-top:0;">💎 System Master Control Node</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="color: #2c3e50; margin:0;">💎 System Master Control Node</h2>
+                    <button id="admin-reset-sales-btn" style="background: #e74c3c; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 6px; cursor: pointer;">🔄 Reset All Sales to Zero</button>
+                </div>
                 
                 <div class="vendor-manager-grid">
                     <div style="background:white; padding:20px; border-radius:8px; border:1px solid #e2e8f0;">
@@ -164,7 +178,6 @@
                 </div>
             </section>
 
-            <!-- OPERATION RAILS KDS DESK -->
             <section id="kitchen-display-view" style="margin-top:25px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="color:#2c3e50; margin:0;">🍳 Ticket Dispatch Stream</h2>
@@ -178,15 +191,12 @@
         </div>
     </div>
 
-    <!-- MODAL WINDOW INJECTIONS -->
     <div id="recipe-modal" class="modal-backdrop hidden">
         <div class="modal-card"><button id="close-modal-btn" class="modal-close-x">&times;</button><div id="modal-body" style="padding:25px;"></div></div>
     </div>
 
-    <!-- MODERN TRANSACTION GATEWAY & DYNAMIC RECEIPT GENERATOR -->
     <div id="checkout-gateway-modal" class="modal-backdrop hidden">
         <div class="payment-container">
-            <!-- STEP 1: SCANNABLE QR NODE -->
             <div id="payment-step-qr" class="checkout-card">
                 <div class="payment-header"><h3>Secure Gateway Terminal</h3><p class="amount-due" id="checkout-amount-display">₹0</p></div>
                 <div class="qr-wrapper"><div class="qr-code" id="qr-target-container"></div></div>
@@ -195,15 +205,10 @@
                     <button class="btn-simulate" id="simulate-success-btn">Simulate Payment Success ✓</button>
                 </div>
             </div>
-
-            <!-- STEP 2: UNIQUE ITEMIZED RECEIPT PANEL -->
             <div id="payment-step-success" class="checkout-card hidden">
                 <div class="success-icon">✓</div>
                 <h2 style="color:#27ae60; margin:5px 0;">Order Confirmed!</h2>
-                
-                <!-- Printable Target Window -->
                 <div id="printable-receipt-area" class="receipt-container"></div>
-                
                 <div class="payment-actions no-print" style="margin-top:15px; display:flex; gap:10px;">
                     <button class="btn-simulate" id="print-receipt-action-btn" style="background:#3498db;">Print / Download Receipt 🖨️</button>
                     <button class="btn-done" id="finalize-success-close-btn" style="flex:1; margin:0;">Return to Kiosk</button>
@@ -214,7 +219,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 🛑 CLEAN SYSTEM DOMAIN ROUTING KEYS
         const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co"; 
         const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
         
@@ -242,20 +246,15 @@
             document.getElementById('hub-logout-btn').addEventListener('click', () => { sessionStorage.removeItem('activeHubUser'); location.reload(); });
             document.getElementById('commit-add-stall-btn').addEventListener('click', registerNewVendorStall);
             document.getElementById('stall-selector').addEventListener('change', () => renderKDSTicketsGrid());
-            document.getElementById('add-addon-row-btn').addEventListener('click', () => addNewAddonInputRow());
             document.getElementById('menu-item-form').addEventListener('submit', commitNewCustomMenuItemForm);
+            document.getElementById('admin-reset-sales-btn').addEventListener('click', executeGlobalSalesReset);
 
             await fetchOperationalStallData();
-            if (activeUserSession) {
-                document.getElementById('view-gateway').classList.add('hidden');
-                document.getElementById('view-kitchen-hub').classList.remove('hidden');
-                await establishKitchenRealtimeSocketPipe();
-                evaluateSessionUI();
-            }
+            await refreshGlobalOrderDataPool();
         });
 
         function returnToMainGateway() { document.getElementById('view-customer-kiosk').classList.add('hidden'); document.getElementById('view-gateway').classList.remove('hidden'); }
-        async function launchCustomerWorkspaceView() { document.getElementById('view-gateway').classList.add('hidden'); document.getElementById('view-customer-kiosk').classList.remove('hidden'); await fetchOperationalStallData(); await establishKitchenRealtimeSocketPipe(); pullMealsFromWebDatabase(); }
+        async function launchCustomerWorkspaceView() { document.getElementById('view-gateway').classList.add('hidden'); document.getElementById('view-customer-kiosk').classList.remove('hidden'); await fetchOperationalStallData(); await refreshGlobalOrderDataPool(); pullMealsFromWebDatabase(); }
         
         function saveCustomerSessionProfile() {
             const name = document.getElementById('cust-name-input').value.trim(); const phone = document.getElementById('cust-phone-input').value.trim();
@@ -263,6 +262,36 @@
             activeCustomer = { name, phone };
             const banner = document.getElementById('session-status-text'); banner.innerHTML = `✅ Linked Profile: <strong>${name} (${phone})</strong>`;
             banner.style.background = "#e8f8f5"; banner.style.color = "#2ecc71";
+        }
+
+        async function refreshGlobalOrderDataPool() {
+            let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false });
+            globalCachedOrders = data || [];
+            renderKDSTicketsGrid();
+            renderCustomerHistoricalLedger();
+            if (activeUserSession) evaluateSessionUI();
+        }
+
+        // 🕒 RENDERS HISTORICAL TIMELINE AT KIOSK FOOTER
+        function renderCustomerHistoricalLedger() {
+            const tbody = document.getElementById('customer-live-ledger-body');
+            if (!tbody) return;
+            if (globalCachedOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No registered transactions found in network stream.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = '';
+            globalCachedOrders.forEach(ord => {
+                const dateStr = new Date(ord.epochIssued).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const targetStalls = ord.stalls ? ord.stalls.map(s => `${s.stallName} (${s.stallTokenId})`).join(', ') : 'N/A';
+                tbody.innerHTML += `<tr>
+                    <td><strong>${dateStr}</strong></td>
+                    <td style="color:#3498db; font-weight:bold;">${ord.orderId}</td>
+                    <td>${ord.customerName} <small style="color:#7f8c8d;">(${ord.customerPhone})</small></td>
+                    <td>${targetStalls}</td>
+                    <td style="font-weight:bold; color:#2ecc71;">₹${ord.grandTotal}</td>
+                </tr>`;
+            });
         }
 
         async function pullMealsFromWebDatabase() {
@@ -282,7 +311,7 @@
             body.innerHTML = `<h3>${meal.name}</h3><p>Base Rate: ₹${meal.price}</p><button id="add-to-basket-btn" class="action-btn-green">Confirm Addition</button>`;
             document.getElementById('recipe-modal').classList.remove('hidden');
             document.getElementById('add-to-basket-btn').onclick = () => {
-                cart.push({ id: Date.now(), name: meal.name, unitPrice: meal.price, quantity: 1, stallName: meal.stall_name, customizations: [] });
+                cart.push({ id: Date.now(), name: meal.name, unitPrice: meal.price, quantity: 1, stallName: meal.stall_name });
                 document.getElementById('recipe-modal').classList.add('hidden');
                 renderBasketUI();
             };
@@ -338,47 +367,58 @@
         function triggerPaymentVerificationFlow() {
             if (!activeStagingPayload) return;
             const area = document.getElementById('printable-receipt-area');
-            
             let itemizedRows = '';
-            cart.forEach(item => {
-                itemizedRows += `<div class="receipt-row"><span>${item.name} (${item.stallName})</span><span>₹${item.unitPrice}</span></div>`;
-            });
+            cart.forEach(item => { itemizedRows += `<div class="receipt-row"><span>${item.name} (${item.stallName})</span><span>₹${item.unitPrice}</span></div>`; });
 
             area.innerHTML = `
-                <div class="receipt-header">
-                    <h2>INGREDCHEF FOOD COURT</h2>
-                    <p>Order ID: ${activeStagingPayload.orderId}</p>
-                    <p>Date: ${new Date().toLocaleString()}</p>
-                </div>
-                <div style="margin: 10px 0;">
-                    <p><strong>Customer:</strong> ${activeStagingPayload.customerName} (${activeStagingPayload.customerPhone})</p>
-                    <p><strong>Token Codes:</strong> ${activeStagingPayload.tokenNumber}</p>
-                </div>
-                <div style="border-bottom: 1px dashed #333; margin: 10px 0;"></div>
-                ${itemizedRows}
-                <div style="border-bottom: 1px dashed #333; margin: 10px 0;"></div>
-                <div class="receipt-row" style="font-weight:bold; font-size:1.1rem;">
-                    <span>GRAND TOTAL:</span><span>₹${activeStagingPayload.grandTotal}</span>
-                </div>
-                <div class="receipt-header" style="margin-top:15px; border:none;">
-                    <p>Thank you! Watch KDS screens for fulfillment updates.</p>
-                </div>
+                <div class="receipt-header"><h2>INGREDCHEF FOOD COURT</h2><p>Order ID: ${activeStagingPayload.orderId}</p><p>Date: ${new Date().toLocaleString()}</p></div>
+                <div style="margin:10px 0;"><p><strong>Customer:</strong> ${activeStagingPayload.customerName}</p><p><strong>Tokens:</strong> ${activeStagingPayload.tokenNumber}</p></div>
+                <div style="border-bottom:1px dashed #333; margin:10px 0;"></div>${itemizedRows}<div style="border-bottom:1px dashed #333; margin:10px 0;"></div>
+                <div class="receipt-row" style="font-weight:bold; font-size:1.1rem;"><span>GRAND TOTAL:</span><span>₹${activeStagingPayload.grandTotal}</span></div>
             `;
             document.getElementById('payment-step-qr').classList.add('hidden');
             document.getElementById('payment-step-success').classList.remove('hidden');
         }
 
         async function pushVerifiedSessionToCoreUI() {
-            if (activeStagingPayload) {
-                await dbClient.from('orders').insert([activeStagingPayload]);
-                await establishKitchenRealtimeSocketPipe();
-            }
-            document.getElementById('checkout-gateway-modal').classList.add('hidden');
-            cart = []; activeStagingPayload = null; renderBasketUI(); resetKioskTerminalState();
-        }
+    if (activeStagingPayload) {
+        // 1. Push order to cloud database
+        await dbClient.from('orders').insert([activeStagingPayload]);
+        
+        // 2. Fetch latest data so history page immediately displays the new order
+        await refreshGlobalOrderDataPool();
+    }
+    // 3. Hide the payment window overlay
+    document.getElementById('checkout-gateway-modal').classList.add('hidden');
+    
+    // 4. Run the full reset sequence for the next customer
+    resetKioskTerminalState();
+}
 
-        function resetKioskTerminalState() { cart = []; renderBasketUI(); activeCustomer = null; document.getElementById('cust-name-input').disabled=false; document.getElementById('cust-phone-input').disabled=false; document.getElementById('register-cust-btn').disabled=false; }
+function resetKioskTerminalState() { 
+    // 1. Clear the functional arrays and active profile objects
+    cart = []; 
+    activeCustomer = null; 
+    activeStagingPayload = null;
 
+    // 2. Clear UI basket components
+    renderBasketUI(); 
+
+    // 3. Explicitly wipe input fields so the old customer's details disappear
+    document.getElementById('cust-name-input').value = '';
+    document.getElementById('cust-phone-input').value = '';
+    
+    // 4. Enable the fields again for the next user
+    document.getElementById('cust-name-input').disabled = false;
+    document.getElementById('cust-phone-input').disabled = false;
+    document.getElementById('register-cust-btn').disabled = false;
+
+    // 5. Reset the yellow notification warning status banner at the top
+    const banner = document.getElementById('session-status-text');
+    banner.innerHTML = `⚠️ No profile linked. Please register details before checking out.`; 
+    banner.style.background = "#fff3cd"; 
+    banner.style.color = "#856404"; 
+}
         async function fetchOperationalStallData() {
             let { data } = await dbClient.from('stalls').select('*'); window.cachedStalls = data || [];
             foodCourtStalls = window.cachedStalls.map(s => s.name);
@@ -388,35 +428,32 @@
 
         function processKdsSecurityAccessCheck() {
             const user = document.getElementById('auth-username').value.trim(); const pass = document.getElementById('auth-password').value.trim();
-            if (user.toLowerCase() === 'admin' && pass === 'admin779') { activeUserSession = { username: "System Admin", role: "admin" }; finishAuthenticationRedirect(); }
+            if (user.toLowerCase() === 'admin' && pass === 'admin779') { activeUserSession = { username: "System Admin", role: "admin" }; finishAuthenticationRedirect(); return; }
             const match = (window.cachedStalls || []).find(s => s.name.toLowerCase() === user.toLowerCase() && s.secret === pass);
-            if (match) { activeUserSession = { username: match.name, role: "stall" }; finishAuthenticationRedirect(); }
+            if (match) { activeUserSession = { username: match.name, role: "stall" }; finishAuthenticationRedirect(); } else { alert('Invalid Credentials'); }
         }
 
-        function finishAuthenticationRedirect() { sessionStorage.setItem('activeHubUser', JSON.stringify(activeUserSession)); document.getElementById('kds-auth-screen').classList.add('hidden'); document.getElementById('view-gateway').classList.add('hidden'); document.getElementById('view-kitchen-hub').classList.remove('hidden'); evaluateSessionUI(); }
-        async function establishKitchenRealtimeSocketPipe() { let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false }); globalCachedOrders = data || []; renderKDSTicketsGrid(); if(activeUserSession) evaluateSessionUI(); }
+        function finishAuthenticationRedirect() { sessionStorage.setItem('activeHubUser', JSON.stringify(activeUserSession)); document.getElementById('kds-auth-screen').classList.add('hidden'); document.getElementById('view-gateway').classList.add('hidden'); document.getElementById('view-kitchen-hub').classList.remove('hidden'); refreshGlobalOrderDataPool(); }
 
-        // 📊 SALES MONITORING PIPELINE SYSTEM CALCULATORS
+        // 📊 FIXED FINANCIAL COMPUTATION SYSTEM (PERSISTS EVEN AFTER TICKET REMOVAL)
         function evaluateSessionUI() {
             if (!activeUserSession) return;
             document.getElementById('active-session-identity').textContent = `👤 Logged: ${activeUserSession.username.toUpperCase()}`;
             
-            // Calculate Sales Metrics dynamically from the synchronized order payload
-            let totalSalesVolume = 0;
-            const stallSalesTracker = {};
-            
-            // Initializing sales object maps
-            window.cachedStalls.forEach(v => stallSalesTracker[v.name] = 0);
+            let totalStallSales = 0;
+            const adminSalesTracker = {};
+            window.cachedStalls.forEach(v => adminSalesTracker[v.name] = 0);
 
+            // Calculate metrics using all records in the full architectural pool
             globalCachedOrders.forEach(order => {
                 if (order.stalls) {
                     order.stalls.forEach(seg => {
                         let segmentCost = seg.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
                         if (seg.stallName === activeUserSession.username) {
-                            totalSalesVolume += segmentCost;
+                            totalStallSales += segmentCost;
                         }
-                        if (stallSalesTracker[seg.stallName] !== undefined) {
-                            stallSalesTracker[seg.stallName] += segmentCost;
+                        if (adminSalesTracker[seg.stallName] !== undefined) {
+                            adminSalesTracker[seg.stallName] += segmentCost;
                         }
                     });
                 }
@@ -425,23 +462,40 @@
             if (activeUserSession.role === 'admin') {
                 document.getElementById('central-admin-view').classList.remove('hidden');
                 document.getElementById('stall-menu-manager').classList.add('hidden');
-                renderAdminVendorListUI(stallSalesTracker);
+                renderAdminVendorListUI(adminSalesTracker);
             } else {
                 document.getElementById('central-admin-view').classList.add('hidden');
                 document.getElementById('stall-menu-manager').classList.remove('hidden');
-                document.getElementById('stall-sales-display').textContent = `₹${totalSalesVolume}`;
+                document.getElementById('stall-sales-display').textContent = `₹${totalStallSales}`;
                 document.getElementById('current-stall-display').innerHTML = `Connected Workstation: <strong>${activeUserSession.username}</strong>`;
                 renderStallSpecificInventoryTable(activeUserSession.username);
             }
         }
 
+        // 🔄 ADMIN OVERRIDE RESET MECHANISM (RESTORES DATA METRICS TO ZERO)
+        async function executeGlobalSalesReset() {
+            if (!confirm("Are you sure you want to reset all operational revenue analytics dashboards to zero? This updates past ticket history registers.")) return;
+            
+            // Loop through and archive/zero-out item metrics across the segments database entries
+            for (let order of globalCachedOrders) {
+                if (order.stalls) {
+                    let altered = order.stalls.map(s => {
+                        return { ...s, items: s.items.map(i => ({ ...i, price: 0 })) };
+                    });
+                    await dbClient.from('orders').update({ stalls: altered, grandTotal: 0 }).eq('orderId', order.orderId);
+                }
+            }
+            alert("All stall financial balances successfully returned to zero!");
+            await refreshGlobalOrderDataPool();
+        }
+
         function renderAdminVendorListUI(salesMap) {
             const container = document.getElementById('admin-vendor-list'); container.innerHTML = '';
-            (window.cachedStalls || []).forEach(s => {
-                const totalStallSales = salesMap[s.name] || 0;
-                container.innerHTML += `<div class="vendor-row" style="display:flex; justify-content:space-between; background:#f8fafc; padding:10px; margin-bottom:5px; border-radius:6px; border:1px solid #e2e8f0;">
+            window.cachedStalls.forEach(s => {
+                const revenue = salesMap[s.name] || 0;
+                container.innerHTML += `<div style="display:flex; justify-content:space-between; background:#f8fafc; padding:12px; margin-bottom:8px; border-radius:6px; border:1px solid #e2e8f0;">
                     <span>🏪 <strong>${s.name}</strong> [${s.prefix}]</span>
-                    <span style="font-weight:bold; color:#2ecc71;">Sales Volume: ₹${totalStallSales}</span>
+                    <span style="font-weight:bold; color:#2ecc71;">Sales Volume: ₹${revenue}</span>
                 </div>`;
             });
         }
@@ -452,7 +506,8 @@
             const secret = document.getElementById('new-stall-password').value.trim();
             if (name && prefix && secret) {
                 await dbClient.from('stalls').insert([{ name, prefix, secret }]);
-                await fetchOperationalStallData(); await establishKitchenRealtimeSocketPipe();
+                document.getElementById('new-stall-name').value=''; document.getElementById('new-stall-prefix').value=''; document.getElementById('new-stall-password').value='';
+                await fetchOperationalStallData(); await refreshGlobalOrderDataPool();
             }
         }
 
@@ -463,8 +518,7 @@
                 name: document.getElementById('food-name').value.trim(),
                 price: parseFloat(document.getElementById('food-price').value),
                 category: document.getElementById('food-category').value,
-                image_url: document.getElementById('food-image-url').value.trim(),
-                addons: []
+                image_url: document.getElementById('food-image-url').value.trim()
             };
             await dbClient.from('menu_items').insert([payload]);
             document.getElementById('menu-item-form').reset();
@@ -475,7 +529,7 @@
             let { data: items } = await dbClient.from('menu_items').select('*').eq('stall_name', stallName); items = items || [];
             const tbody = document.getElementById('stall-menu-table-body'); tbody.innerHTML = '';
             items.forEach(item => {
-                tbody.innerHTML += `<tr><td style="padding:5px;"><img src="${item.image_url}" style="width:35px;height:35px;object-fit:cover;"></td><td><strong>${item.name}</strong></td><td>${item.category}</td><td>₹${item.price}</td><td><button style="color:red; cursor:pointer;" onclick="deleteItemRow('${item.id}')">✕</button></td></tr>`;
+                tbody.innerHTML += `<tr><td><img src="${item.image_url}" style="width:35px;height:35px;object-fit:cover;"></td><td><strong>${item.name}</strong></td><td>${item.category}</td><td>₹${item.price}</td><td><button style="color:red; background:none; border:none; cursor:pointer;" onclick="deleteItemRow('${item.id}')">✕</button></td></tr>`;
             });
         }
 
@@ -485,18 +539,25 @@
             const filter = activeUserSession?.role === 'admin' ? document.getElementById('stall-selector').value : activeUserSession?.username;
             const pBox = document.getElementById('queue-pending'); const rBox = document.getElementById('queue-ready');
             if(!pBox || !rBox) return; pBox.innerHTML = ''; rBox.innerHTML = '';
+            
             globalCachedOrders.forEach(order => {
                 if (!order.stalls) return;
                 order.stalls.forEach(s => {
                     if (filter && filter !== "ALL" && s.stallName !== filter) return;
                     if (s.dismissed) return;
+                    
                     const isDone = s.etaMinutes !== null;
                     const card = document.createElement('div'); card.className = "kds-ticket";
-                    card.innerHTML = `<h5>${s.stallTokenId}</h5><p>${order.customerName}</p><button>${isDone?'Clear':'Complete'}</button>`;
+                    
+                    let itemsSummary = s.items ? s.items.map(i => `${i.qty}x ${i.name}`).join(', ') : '';
+                    card.innerHTML = `<h5>${s.stallTokenId}</h5><p style="margin:4px 0; font-size:0.8rem;">${itemsSummary}</p><button class="action-btn-green" style="padding:4px 10px; font-size:0.75rem;">${isDone?'Clear':'Complete'}</button>`;
+                    
                     card.querySelector('button').onclick = async () => {
-                        s.dismissed = isDone; if (!isDone) s.etaMinutes = 0;
+                        s.dismissed = isDone; 
+                        if (!isDone) s.etaMinutes = 0; // Mark as ready
+                        
                         await dbClient.from('orders').update({ stalls: order.stalls }).eq('orderId', order.orderId);
-                        await establishKitchenRealtimeSocketPipe();
+                        await refreshGlobalOrderDataPool();
                     };
                     if (isDone) rBox.appendChild(card); else pBox.appendChild(card);
                 });
