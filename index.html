@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IngredChef Kiosk Hub</title>
+    <title>IngredChef Hub</title>
     <link rel="icon" type="image/png" href="IngredChef_Logo.png">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -74,7 +74,6 @@
             width: 100%;
         }
 
-        /* Adjusted for a larger, prominent brand presentation */
         .gateway-logo-container {
             width: 180px;
             height: 180px;
@@ -89,7 +88,6 @@
             overflow: hidden;
         }
 
-        /* Maximized edge-to-edge padding utilization safely */
         .gateway-brand-logo {
             width: 92%;
             height: 92%;
@@ -156,10 +154,6 @@
         .header-btn { background: var(--primary-accent); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; }
         .status-banner { padding: 12px 30px; background: #fff3cd; color: #856404; font-size: 0.95rem; font-weight: 500; text-align: center; border-bottom: 1px solid #ffeeba; }
         
-        .receipt-container { background: #fff; padding: 20px; border-radius: 8px; color: #333; font-family: 'Courier New', Courier, monospace; border: 1px dashed #ccc; margin-top: 15px; }
-        .receipt-header { text-align: center; border-bottom: 1px dashed #333; padding-bottom: 10px; margin-bottom: 10px; }
-        .receipt-row { display: flex; justify-content: space-between; margin: 5px 0; font-size: 0.9rem; }
-        
         .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .metric-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; text-align: center; }
         .metric-value { font-size: 1.8rem; font-weight: bold; color: #2c3e50; margin-top: 5px; }
@@ -207,25 +201,12 @@
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 200; }
         .modal-card, .checkout-card { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 100%; max-width: 480px; position: relative; overflow: hidden; }
         .modal-close-x { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
-        .payment-header { background: var(--primary-dark); color: white; padding: 20px; text-align: center; }
-        .qr-wrapper { display: flex; justify-content: center; padding: 35px; background: #f8fafc; }
-        .payment-actions { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
-        .btn-cancel { background: #94a3b8; color: white; border: none; padding: 12px; border-radius: var(--radius-md); font-weight: bold; cursor: pointer; }
-        .btn-simulate { background: var(--primary-accent); color: white; border: none; padding: 12px; border-radius: var(--radius-md); font-weight: bold; cursor: pointer; }
-        .success-icon { width: 70px; height: 70px; background: #e8f8f5; color: var(--success-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; margin: 25px auto 10px auto; }
-        .btn-done { background: var(--primary-dark); color: white; border: none; padding: 12px; border-radius: var(--radius-md); font-weight: bold; cursor: pointer; }
         
         .vendor-manager-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-top: 15px; }
-
         .vendor-tracking-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: var(--radius-md);
-            margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: var(--radius-md); margin-bottom: 10px;
         }
         .vendor-meta h5 { color: var(--primary-dark); margin: 0; font-size: 0.95rem; }
         .vendor-meta span { color: var(--text-muted); font-size: 0.8rem; }
@@ -248,7 +229,7 @@
     <div id="kds-auth-screen" class="auth-overlay hidden">
         <div class="auth-card">
             <h3 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">🔒 KDS Security Gateway</h3>
-            <input type="text" id="auth-username" class="form-input" placeholder="Stall Name or Admin">
+            <input type="text" id="auth-username" class="form-input" placeholder="Stall Name Code or 'admin'">
             <div class="password-input-wrapper">
                 <input type="password" id="auth-password" class="form-input" placeholder="Password Access Token" style="padding-right: 40px;">
                 <span id="kds-password-toggle" class="password-toggle-trigger">👁️</span>
@@ -288,27 +269,17 @@
                     <input type="text" id="food-search-input" placeholder="Search registered dish names..." style="flex:1; padding:12px; border-radius:6px; border:2px solid #cbd5e1;">
                     <button id="search-btn" style="background:#34495e; color:white; border:none; padding:0 25px; border-radius:6px; font-weight:bold; cursor:pointer;">Search</button>
                 </div>
-                <p id="status-message" style="color:#7f8c8d; font-weight:bold; margin-bottom:10px;">🥣 Loading dishes...</p>
                 <div id="recipe-grid" class="cards-grid"></div>
                 
                 <section style="margin-top:40px; background:white; padding:20px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:10px;">
                         <h3 style="color:#2c3e50; margin:0;">📋 Live Transaction Audit Logs</h3>
-                        <button id="kiosk-clear-history-btn" class="action-btn-red">🗑️ Clear Kiosk History</button>
                     </div>
                     <table class="ledger-table">
                         <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Order Reference</th>
-                                <th>Customer Profile</th>
-                                <th>Stall Load Targets</th>
-                                <th>Charged</th>
-                            </tr>
+                            <tr><th>Timestamp</th><th>Order Reference</th><th>Customer Profile</th><th>Items Ordered</th><th>Charged</th></tr>
                         </thead>
-                        <tbody id="customer-live-ledger-body">
-                            <tr><td colspan="5" style="text-align:center; color:#94a3b8;">No registered transactions found in network stream.</td></tr>
-                        </tbody>
+                        <tbody id="customer-live-ledger-body"></tbody>
                     </table>
                 </section>
             </main>
@@ -319,7 +290,6 @@
                     <div id="cart-items-container"></div>
                     <div class="basket-total"><span>Grand Total:</span> <span id="cart-grand-total">₹0</span></div>
                     <button id="checkout-btn" class="action-btn-green">Finalize Order & Pay</button>
-                    <button id="clear-kiosk-btn" style="background:#95a5a6; color:white; border:none; width:100%; padding:8px; margin-top:8px; border-radius:6px; cursor:pointer; font-weight:bold;">Reset Kiosk</button>
                 </div>
             </aside>
         </div>
@@ -331,24 +301,21 @@
                 <button class="exit-workspace-btn" style="background:#e74c3c;" id="hub-logout-btn">← Logout</button>
                 <h1 style="color:white; margin:0; font-size:1.4rem;">IngredChef Kitchen Hub</h1>
             </div>
-            <div style="display:flex; gap:15px; align-items:center;">
-                <button id="hub-to-kiosk-btn" style="background:#3498db; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">Go To Kiosk 🛒</button>
-                <span id="active-session-identity" class="session-user-badge" style="color:white; border:1px solid white;">Connecting Stream...</span>
-            </div>
+            <span id="active-session-identity" style="color:white; padding: 4px 10px; border:1px solid white; border-radius:4px; font-weight:bold;">Profile</span>
         </header>
 
         <div style="padding:30px; max-width:1600px; margin:0 auto;">
+            
             <section id="stall-menu-manager" class="hidden" style="background: white; border: 1px solid #cbd5e1; padding:20px; border-radius:8px; margin-bottom:20px;">
                 <div class="metrics-grid">
                     <div class="metric-card" style="border-top: 4px solid #2ecc71;">
-                        <h4 style="margin:0; color:#7f8c8d;">Your Total Sales Volume</h4>
+                        <h4 style="margin:0; color:#7f8c8d;">Your Stall Sales Volume</h4>
                         <div class="metric-value" id="stall-sales-display">₹0</div>
                     </div>
                 </div>
-                <h3 style="color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 5px;">📋 Isolated Menu Customizer Portal</h3>
-                <p id="current-stall-display" style="font-weight: bold; color: #7f8c8d; font-size: 0.9rem; margin-bottom: 15px;"></p>
+                <h3 style="color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-bottom:15px;">📋 Isolated Menu Customizer Portal</h3>
                 
-                <form id="menu-item-form" style="background: #fdfefe; border: 1px dashed #3498db; padding: 20px; border-radius: 8px;">
+                <form id="menu-item-form" style="background: #fdfefe; border: 1px dashed #3498db; padding: 20px; border-radius: 8px; margin-bottom:20px;">
                     <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                         <input type="text" id="food-name" required placeholder="Food Item Name" class="form-input" style="margin:0;">
                         <input type="number" id="food-price" required min="1" placeholder="Price (₹)" class="form-input" style="margin:0;">
@@ -358,22 +325,21 @@
                             <option value="Dessert">Dessert</option>
                         </select>
                     </div>
-                    <input type="url" id="food-image-url" required placeholder="Paste image address" class="form-input">
+                    <input type="url" id="food-image-url" required placeholder="Paste Image Address URL" class="form-input">
                     <button type="submit" class="action-btn-green" style="width:auto; padding:10px 25px;">Push Item to Active Catalog</button>
                 </form>
 
-                <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size:0.85rem;">
+                <h4>Your Current Menu Items</h4>
+                <table class="ledger-table" style="margin-top:10px;">
                     <thead style="background:#f2f4f4;">
-                        <tr><th>Preview</th><th>Item Label</th><th>Category</th><th>Base Cost</th><th>Actions</th></tr>
+                        <tr><th>Item Label</th><th>Category</th><th>Base Cost</th></tr>
                     </thead>
                     <tbody id="stall-menu-table-body"></tbody>
                 </table>
             </section>
 
             <section id="central-admin-view" class="hidden" style="background: white; border: 1px solid #cbd5e1; padding:20px; border-radius:8px; margin-bottom:20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary-dark); padding-bottom: 10px;">
-                    <h2 style="color: var(--primary-dark); margin:0;">💎 System Master Control Node</h2>
-                </div>
+                <h2 style="color: var(--primary-dark); border-bottom: 2px solid var(--primary-dark); padding-bottom: 10px; margin-bottom:15px;">💎 System Master Control Node</h2>
                 
                 <div class="vendor-manager-grid">
                     <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #e2e8f0;">
@@ -388,26 +354,20 @@
                         <div id="admin-vendor-list"></div>
                     </div>
                 </div>
-
-                <div style="margin-top:25px; border-top:1px solid #e2e8f0; padding-top:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h4 style="color:var(--primary-dark); margin:0;">📊 Cloud Database Transmitted Audit Ledger</h4>
-                        <button id="admin-wipe-tables-btn" class="action-btn-red" style="background:var(--danger-red);">Wipe Database Tables</button>
-                    </div>
-                    <table class="ledger-table" style="margin-top:0;">
-                        <thead>
-                            <tr><th>Timestamp</th><th>Order Reference</th><th>Customer Profile</th><th>Stall Load Targets</th><th>Charged</th></tr>
-                        </thead>
-                        <tbody id="admin-live-ledger-body"></tbody>
-                    </table>
-                </div>
             </section>
 
-            <section id="kitchen-display-view" style="margin-top:25px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2 style="color:#2c3e50; margin:0;">🍳 Ticket Dispatch Stream</h2>
-                    <select id="stall-selector" class="dropdown-filter"></select>
-                </div>
+            <section style="background:white; padding:20px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:20px;">
+                <h3 style="color:var(--primary-dark); margin-bottom:15px;" id="ledger-title-text">📊 Transaction History Stream</h3>
+                <table class="ledger-table">
+                    <thead>
+                        <tr><th>Timestamp</th><th>Order Reference</th><th>Customer Profile</th><th>Items Ordered</th><th>Charged</th></tr>
+                    </thead>
+                    <tbody id="hub-live-ledger-body"></tbody>
+                </table>
+            </section>
+
+            <section id="kitchen-display-view">
+                <h2 style="color:#2c3e50; margin-bottom:15px;">🍳 Ticket Dispatch Preparation Rails</h2>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:25px;">
                     <div><div class="rail-header rail-cooking">⏳ Preparing</div><div id="queue-pending" class="tickets-vertical-stack"></div></div>
                     <div><div class="rail-header rail-ready">✅ Ready</div><div id="queue-ready" class="tickets-vertical-stack"></div></div>
@@ -416,167 +376,76 @@
         </div>
     </div>
 
-    <div id="recipe-modal" class="modal-backdrop hidden">
-        <div class="modal-card"><button id="close-modal-btn" class="modal-close-x">&times;</button><div id="modal-body" style="padding:25px;"></div></div>
-    </div>
-
     <div id="checkout-gateway-modal" class="modal-backdrop hidden">
-        <div class="payment-container">
-            <div id="payment-step-qr" class="checkout-card">
-                <div class="payment-header"><h3>Secure Gateway Terminal</h3><p class="amount-due" id="checkout-amount-display">₹0</p></div>
-                <div class="qr-wrapper"><div class="qr-code" id="qr-target-container"></div></div>
-                <div class="payment-actions">
-                    <button class="btn-cancel" id="abort-payment-btn">Cancel</button>
-                    <button class="btn-simulate" id="simulate-success-btn">Simulate Payment Success ✓</button>
-                </div>
-            </div>
-            
-            <div id="payment-step-success" class="checkout-card hidden">
-                <div class="success-icon">✓</div>
-                <h3 style="text-align:center; color:var(--success-green); margin-bottom:10px;">Payment Successful</h3>
-                <p style="text-align:center; color:var(--text-muted); padding: 0 20px 20px 20px;">Your order has been pushed to the kitchen display stream.</p>
-                <div style="padding: 20px; text-align:center;">
-                    <button id="btn-done" class="btn-done" style="width:100%;">Done</button>
-                </div>
+        <div class="modal-card" style="padding:25px; text-align:center;">
+            <h3>Secure Gateway Terminal</h3>
+            <h1 id="checkout-amount-display" style="margin:20px 0; color:var(--primary-dark);">₹0</h1>
+            <p style="color:var(--text-muted); margin-bottom:20px;">Simulating Network Bank Handshake</p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-cancel" id="abort-payment-btn" style="flex:1; padding:12px; border-radius:6px; border:none; cursor:pointer;">Cancel</button>
+                <button class="action-btn-green" id="simulate-success-btn" style="flex:2;">Confirm Payment ✓</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. Initialize Active Supabase Client Configuration Connection Node
+        // 1. Supabase Initialization Setup Base Parameter Elements 
         const SUPABASE_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Local Memory Copy Engine Cache Array
+        // Core Application State Memory Matrices
         let globalStalls = [];
+        let globalDishes = [];
+        let globalOrders = [];
+        let activeKdsUser = null; // Stores either 'admin' or Stall Prefix string
+        let selectedCategory = "ALL";
+        let currentBasket = [];
+        let clientProfile = { name: "", phone: "" };
 
-        // 2. Data Access: Pull Active Stalls from Supabase Table Infrastructure
-        async function fetchStallsFromSupabase() {
-            try {
-                const { data, error } = await _supabase
-                    .from('stalls') 
-                    .select('*')
-                    .order('created_at', { ascending: true });
-
-                if (error) throw error;
-                
-                globalStalls = data || [];
-                renderAdminVendorTrackingList();
-            } catch (err) {
-                console.error("Database connection stream error:", err.message);
-                // Graceful local development fallback if credentials aren't initialized yet
-                if(globalStalls.length === 0) {
-                    globalStalls = [
-                        { id: 1, name: "Burger King Express", prefix: "BK", revenue_share: "12%" },
-                        { id: 2, name: "Pizza Hut Counter", prefix: "PH", revenue_share: "15%" }
-                    ];
-                    renderAdminVendorTrackingList();
-                }
-            }
-        }
-
-        // 3. UI Component Layer: Renders Registered Outlets Node Lists cleanly with Actions
-        function renderAdminVendorTrackingList() {
-            const container = document.getElementById('admin-vendor-list');
-            if (!container) return;
-
-            if (globalStalls.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">No registered stalls active in network cluster.</p>`;
-                return;
-            }
-
-            container.innerHTML = globalStalls.map(stall => `
-                <div class="vendor-tracking-row">
-                    <div class="vendor-meta">
-                        <h5>${stall.name}</h5>
-                        <span>Prefix Code: <strong>${stall.prefix}</strong> | Platform Revenue Share: ${stall.revenue_share || '10%'}</span>
-                    </div>
-                    <button class="action-btn-red" onclick="revokeStallAccess('${stall.id}')">Revoke Access</button>
-                </div>
-            `).join('');
-
-            updateStallDropdownSelectors();
-        }
-
-        // 4. Data Sync: Propagate state updates directly to operational drop-down items
-        function updateStallDropdownSelectors() {
-            const selector = document.getElementById('stall-selector');
-            if (!selector) return;
-            selector.innerHTML = `<option value="ALL">All Active Kitchen Rails</option>` + 
-                globalStalls.map(s => `<option value="${s.prefix}">${s.name}</option>`).join('');
-        }
-
-        // 5. Mutation Action: Provision a New Stall with Explicit Unique Column Validation Rules
-        document.getElementById('commit-add-stall-btn')?.addEventListener('click', async () => {
-            const nameInput = document.getElementById('new-stall-name');
-            const prefixInput = document.getElementById('new-stall-prefix');
-            const passwordInput = document.getElementById('new-stall-password');
-
-            if (!nameInput.value || !prefixInput.value) {
-                alert("Please fully satisfy configuration parameters before launching an outlet.");
-                return;
-            }
-
-            const newStallData = {
-                name: nameInput.value.trim(),
-                prefix: prefixInput.value.trim().toUpperCase(),
-                password: passwordInput.value,
-                revenue_share: "10%"
-            };
-
-            try {
-                const { error } = await _supabase
-                    .from('stalls')
-                    .insert([newStallData]);
-
-                if (error) {
-                    // Check for Supabase standard Unique Constraint Violation Error Code (PostgreSQL code: 23505)
-                    if (error.code === '23505') {
-                        alert("Failed creating structural stall outlet. Check unique constraints: Name or Code prefix already deployed.");
-                    } else {
-                        throw error;
-                    }
-                    return;
-                }
-
-                // Clean form state elements upon success
-                nameInput.value = '';
-                prefixInput.value = '';
-                passwordInput.value = '';
-
-                await fetchStallsFromSupabase();
-            } catch (err) {
-                // Client-side execution tracking backup strategy 
-                const duplicateCheck = globalStalls.find(s => s.name.toLowerCase() === newStallData.name.toLowerCase() || s.prefix.toUpperCase() === newStallData.prefix);
-                if (duplicateCheck) {
-                    alert("Failed creating structural stall outlet. Check unique constraints: Name or Code prefix already deployed.");
-                } else {
-                    alert("Database write error encountered: " + err.message);
-                }
-            }
+        // 2. Initialization Loop Engine Onload
+        window.addEventListener('DOMContentLoaded', async () => {
+            await synchronizeSystemDataEngine();
+            renderCustomerMenuCatalog();
+            setupPasswordToggleSwitch();
         });
 
-        // 6. Mutation Action: Revoke and Delete a Stall record safely from data maps
-        window.revokeStallAccess = async function(stallId) {
-            if (confirm("Are you sure you want to revoke network credentials for this outlet? This will instantly disconnect their active kitchen streams.")) {
-                try {
-                    const { error } = await _supabase
-                        .from('stalls')
-                        .delete()
-                        .eq('id', stallId);
+        async function synchronizeSystemDataEngine() {
+            try {
+                const stallsRes = await _supabase.from('stalls').select('*').order('name');
+                globalStalls = stallsRes.data || [];
+                
+                const dishesRes = await _supabase.from('dishes').select('*');
+                globalDishes = dishesRes.data || [];
 
-                    if (error) throw error;
-                    await fetchStallsFromSupabase();
-                } catch (err) {
-                    // Fallback filtering routine if using local memory array mode 
-                    globalStalls = globalStalls.filter(s => s.id !== parseInt(stallId) && s.id !== stallId);
-                    renderAdminVendorTrackingList();
-                }
+                const ordersRes = await _supabase.from('orders').select('*').order('created_at', { ascending: false });
+                globalOrders = ordersRes.data || [];
+                
+                renderLiveLedgerTables();
+            } catch(e) {
+                console.error("Critical Sync Fault Tracker Exception: ", e);
             }
-        };
+        }
 
-        // 7. Core Route View Management Toggles
+        // 3. Password Field Eye Toggle Functional Logic Hook Handler
+        function setupPasswordToggleSwitch() {
+            const toggleTrigger = document.getElementById('kds-password-toggle');
+            const passwordInput = document.getElementById('auth-password');
+            
+            if (toggleTrigger && passwordInput) {
+                toggleTrigger.addEventListener('click', () => {
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        toggleTrigger.textContent = '🙈';
+                    } else {
+                        passwordInput.type = 'password';
+                        toggleTrigger.textContent = '👁️';
+                    }
+                });
+            }
+        }
+
+        // 4. Client Core Authentication Routing Engine Rules
         document.getElementById('gate-to-customer-btn')?.addEventListener('click', () => {
             document.getElementById('view-gateway').style.display = 'none';
             document.getElementById('view-customer-kiosk').classList.remove('hidden');
@@ -587,24 +456,394 @@
         document.getElementById('auth-cancel-btn')?.addEventListener('click', () => {
             document.getElementById('kds-auth-screen').classList.add('hidden');
         });
+
         document.getElementById('auth-login-btn')?.addEventListener('click', () => {
+            const userBox = document.getElementById('auth-username');
+            const passBox = document.getElementById('auth-password');
+            const inputUser = userBox.value.trim().toLowerCase();
+            const inputPass = passBox.value;
+
+            if(inputUser === 'admin' && inputPass === 'admin123') {
+                bootKdsDashboardSession('admin');
+            } else {
+                const matchingStall = globalStalls.find(s => s.prefix.toLowerCase() === inputUser && s.password === inputPass);
+                if(matchingStall) {
+                    bootKdsDashboardSession(matchingStall.prefix.toUpperCase());
+                } else {
+                    alert("Security credentials refused. Check assignment tokens.");
+                }
+            }
+        });
+
+        // 5. Secure Session Builder & UI Tree Branch Layout Generation
+        function bootKdsDashboardSession(roleMode) {
+            activeKdsUser = roleMode;
             document.getElementById('kds-auth-screen').classList.add('hidden');
             document.getElementById('view-gateway').style.display = 'none';
             document.getElementById('view-kitchen-hub').classList.remove('hidden');
-            document.getElementById('central-admin-view').classList.remove('hidden');
-            document.getElementById('stall-menu-manager').classList.remove('hidden');
-            
-            // Trigger database synchronization pipeline instantly upon authorization
-            fetchStallsFromSupabase(); 
+            document.getElementById('active-session-identity').textContent = `Session: ${roleMode}`;
+
+            const adminSection = document.getElementById('central-admin-view');
+            const stallSection = document.getElementById('stall-menu-manager');
+
+            if(roleMode === 'admin') {
+                adminSection.classList.remove('hidden');
+                stallSection.classList.add('hidden');
+                document.getElementById('ledger-title-text').textContent = "📊 Cloud Central Terminal Audit History (All Stalls)";
+                renderAdminStallsTable();
+            } else {
+                adminSection.classList.add('hidden');
+                stallSection.classList.remove('hidden');
+                document.getElementById('ledger-title-text').textContent = `📊 Isolated Audit Log History (${roleMode} Counter Only)`;
+                renderStallIsolatedInterface();
+            }
+
+            renderLiveLedgerTables();
+            renderKdsOperationalRails();
+        }
+
+        // 6. Complete Session Clean Refresh Reset on Logout Execution Node
+        document.getElementById('hub-logout-btn')?.addEventListener('click', () => {
+            // Explicitly clear login credentials and input elements
+            activeKdsUser = null;
+            const userBox = document.getElementById('auth-username');
+            const passBox = document.getElementById('auth-password');
+            if (userBox) userBox.value = '';
+            if (passBox) {
+                passBox.value = '';
+                passBox.type = 'password'; // Revert back to hidden password format type
+            }
+            const toggleTrigger = document.getElementById('kds-password-toggle');
+            if(toggleTrigger) toggleTrigger.textContent = '👁️';
+
+            // Swap out structural container screens back to central terminal loop
+            document.getElementById('view-kitchen-hub').classList.add('hidden');
+            document.getElementById('view-gateway').style.display = 'flex';
         });
+
         document.getElementById('exit-kiosk-btn')?.addEventListener('click', () => {
             document.getElementById('view-customer-kiosk').classList.add('hidden');
             document.getElementById('view-gateway').style.display = 'flex';
         });
-        document.getElementById('hub-logout-btn')?.addEventListener('click', () => {
-            document.getElementById('view-kitchen-hub').classList.add('hidden');
-            document.getElementById('view-gateway').style.display = 'flex';
+
+        // 7. Admin UI Rendering Engine Block
+        function renderAdminStallsTable() {
+            const container = document.getElementById('admin-vendor-list');
+            if(!container) return;
+
+            container.innerHTML = globalStalls.map(stall => {
+                // Calculate individual stall sales total based on orders mapping containing elements for that stall
+                const stallTotalSales = globalOrders.reduce((sum, order) => {
+                    try {
+                        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                        const matchCost = items.reduce((acc, i) => i.stall === stall.prefix ? acc + (i.price * i.qty) : acc, 0);
+                        return sum + matchCost;
+                    } catch(e) { return sum; }
+                }, 0);
+
+                return `
+                    <div class="vendor-tracking-row">
+                        <div class="vendor-meta">
+                            <h5>${stall.name} [${stall.prefix}]</h5>
+                            <span>Current Total Sales Volume: <strong>₹${stallTotalSales}</strong></span>
+                        </div>
+                        <button class="action-btn-red" onclick="deleteStallNode('${stall.id}')">Revoke Access</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        document.getElementById('commit-add-stall-btn')?.addEventListener('click', async () => {
+            const name = document.getElementById('new-stall-name').value.trim();
+            const prefix = document.getElementById('new-stall-prefix').value.trim().toUpperCase();
+            const pass = document.getElementById('new-stall-password').value;
+
+            if(!name || !prefix || !pass) return alert("Fill all operational credentials to register shop.");
+
+            const { error } = await _supabase.from('stalls').insert([{ name, prefix, password: pass, revenue_share: "10%" }]);
+            if(error) return alert("Unique constraint conflict metadata matching target prefix encountered.");
+
+            document.getElementById('new-stall-name').value = '';
+            document.getElementById('new-stall-prefix').value = '';
+            document.getElementById('new-stall-password').value = '';
+            
+            await synchronizeSystemDataEngine();
+            renderAdminStallsTable();
         });
+
+        window.deleteStallNode = async function(id) {
+            if(!confirm("Revoke credentials for this store outlet node?")) return;
+            await _supabase.from('stalls').delete().eq('id', id);
+            await synchronizeSystemDataEngine();
+            renderAdminStallsTable();
+        };
+
+        // 8. Stall Owner Dynamic Processing Views
+        function renderStallIsolatedInterface() {
+            const menuBody = document.getElementById('stall-menu-table-body');
+            const myItems = globalDishes.filter(d => d.stall_prefix === activeKdsUser);
+            
+            menuBody.innerHTML = myItems.map(i => `
+                <tr>
+                    <td><strong>${i.name}</strong></td>
+                    <td>${i.category}</td>
+                    <td>₹${i.price}</td>
+                </tr>
+            `).join('');
+
+            // Calculate current specific stall total sales volume context matching items mapping array definitions
+            const totalSalesVal = globalOrders.reduce((sum, order) => {
+                try {
+                    const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                    const stallContribution = items.reduce((acc, i) => i.stall === activeKdsUser ? acc + (i.price * i.qty) : acc, 0);
+                    return sum + stallContribution;
+                } catch(e) { return sum; }
+            }, 0);
+
+            document.getElementById('stall-sales-display').textContent = `₹${totalSalesVal}`;
+        }
+
+        document.getElementById('menu-item-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('food-name').value.trim();
+            const price = parseInt(document.getElementById('food-price').value);
+            const category = document.getElementById('food-category').value;
+            const img = document.getElementById('food-image-url').value.trim();
+
+            await _supabase.from('dishes').insert([{ name, price, category, image_url: img, stall_prefix: activeKdsUser }]);
+            
+            document.getElementById('menu-item-form').reset();
+            await synchronizeSystemDataEngine();
+            renderStallIsolatedInterface();
+        });
+
+        // 9. Central Ledger Stream Pipeline Visual Component Elements Generator
+        function renderLiveLedgerTables() {
+            const customerBody = document.getElementById('customer-live-ledger-body');
+            const hubBody = document.getElementById('hub-live-ledger-body');
+            
+            let filteredOrders = [...globalOrders];
+            if(activeKdsUser && activeKdsUser !== 'admin') {
+                // If it is a stall login context stream array element validation routine parsing checks
+                filteredOrders = globalOrders.filter(order => {
+                    try {
+                        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                        return items.some(i => i.stall === activeKdsUser);
+                    } catch(e) { return false; }
+                });
+            }
+
+            const buildRowHtml = (order) => {
+                let itemSummary = "";
+                let renderedPrice = order.total_amount;
+                try {
+                    const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                    
+                    if(activeKdsUser && activeKdsUser !== 'admin') {
+                        const targets = items.filter(i => i.stall === activeKdsUser);
+                        itemSummary = targets.map(i => `${i.name} (x${i.qty})`).join(', ');
+                        renderedPrice = targets.reduce((a, b) => a + (b.price * b.qty), 0);
+                    } else {
+                        itemSummary = items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                    }
+                } catch(e) { itemSummary = "Error parsing item list"; }
+
+                return `
+                    <tr>
+                        <td>${new Date(order.created_at).toLocaleTimeString()}</td>
+                        <td><strong style="color:var(--primary-accent);">${order.order_ref || 'IC-REF'}</strong></td>
+                        <td>${order.customer_name || 'Walk-In'} (${order.customer_phone || 'N/A'})</td>
+                        <td>${itemSummary}</td>
+                        <td><strong>₹${renderedPrice}</strong></td>
+                    </tr>
+                `;
+            };
+
+            if(customerBody) customerBody.innerHTML = globalOrders.slice(0, 5).map(buildRowHtml).join('');
+            if(hubBody) hubBody.innerHTML = filteredOrders.map(buildRowHtml).join('');
+        }
+
+        // 10. Customer Order Placement & Kiosk Flow System Layout
+        document.getElementById('register-cust-btn')?.addEventListener('click', () => {
+            const name = document.getElementById('cust-name-input').value.trim();
+            const phone = document.getElementById('cust-phone-input').value.trim();
+
+            if(!name || phone.length < 10) return alert("Enter correct structural identity fields validation params.");
+            clientProfile = { name, phone };
+            
+            document.getElementById('session-status-text').className = "status-banner";
+            document.getElementById('session-status-text').style.background = "#d4edda";
+            document.getElementById('session-status-text').style.color = "#155724";
+            document.getElementById('session-status-text').textContent = `Linked Connection Session Profile: Customer: ${name} (${phone})`;
+        });
+
+        function renderCustomerMenuCatalog() {
+            const grid = document.getElementById('recipe-grid');
+            if(!grid) return;
+
+            const targets = selectedCategory === 'ALL' ? globalDishes : globalDishes.filter(d => d.category === selectedCategory);
+            
+            if(targets.length === 0) {
+                grid.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-muted); width:100%;">No dishes listed in this category stream block yet.</p>`;
+                return;
+            }
+
+            grid.innerHTML = targets.map(dish => `
+                <div class="meal-card">
+                    <img src="${dish.image_url}" alt="${dish.name}" style="width:100%; height:140px; object-fit:cover;">
+                    <div style="padding:12px;">
+                        <span class="stall-tag">${dish.stall_prefix || 'Outlet'}</span>
+                        <h4 style="margin:4px 0;">${dish.name}</h4>
+                        <h3 style="color:var(--primary-dark)">₹${dish.price}</h3>
+                        <button class="select-btn" onclick="addItemToBasket(${dish.id})">Add to Order</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                selectedCategory = e.target.dataset.category;
+                renderCustomerMenuCatalog();
+            });
+        });
+
+        window.addItemToBasket = function(dishId) {
+            const target = globalDishes.find(d => d.id === dishId);
+            if(!target) return;
+
+            const existing = currentBasket.find(i => i.id === dishId);
+            if(existing) {
+                existing.qty++;
+            } else {
+                currentBasket.push({ id: target.id, name: target.name, price: target.price, stall: target.stall_prefix, qty: 1 });
+            }
+            renderBasketTree();
+        };
+
+        function renderBasketTree() {
+            const container = document.getElementById('cart-items-container');
+            const totalDisplay = document.getElementById('cart-grand-total');
+            
+            container.innerHTML = currentBasket.map(item => `
+                <div class="basket-item-row">
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <small style="color:var(--text-muted)">₹${item.price} each [${item.stall}]</small>
+                    </div>
+                    <div>
+                        <span style="font-weight:bold; margin-right:10px;">x${item.qty}</span>
+                        <button class="action-btn-red" style="padding:2px 6px;" onclick="dropItemBasketNode(${item.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
+            totalDisplay.textContent = `₹${sum}`;
+        }
+
+        window.dropItemBasketNode = function(id) {
+            currentBasket = currentBasket.filter(i => i.id !== id);
+            renderBasketTree();
+        };
+
+        document.getElementById('checkout-btn')?.addEventListener('click', () => {
+            if(currentBasket.length === 0) return alert("Basket container currently holds no menu item lines.");
+            if(!clientProfile.name) return alert("Link customer session telephone tracking fields before processing checkout arrays.");
+
+            const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
+            document.getElementById('checkout-amount-display').textContent = `₹${sum}`;
+            document.getElementById('checkout-gateway-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('abort-payment-btn')?.addEventListener('click', () => {
+            document.getElementById('checkout-gateway-modal').classList.add('hidden');
+        });
+
+        document.getElementById('simulate-success-btn')?.addEventListener('click', async () => {
+            const sum = currentBasket.reduce((a, b) => a + (b.price * b.qty), 0);
+            const refCode = "IC-" + Math.floor(1000 + Math.random() * 9000);
+
+            const payload = {
+                order_ref: refCode,
+                customer_name: clientProfile.name,
+                customer_phone: clientProfile.phone,
+                items: JSON.stringify(currentBasket),
+                total_amount: sum,
+                order_status: "COOKING"
+            };
+
+            await _supabase.from('orders').insert([payload]);
+            
+            // Clean dynamic interface arrays parameters elements layout tree maps
+            currentBasket = [];
+            renderBasketTree();
+            document.getElementById('checkout-gateway-modal').classList.add('hidden');
+            
+            await synchronizeSystemDataEngine();
+        });
+
+        // 11. Kitchen Display System (KDS) Operational Pipeline Rendering Matrix
+        function renderKdsOperationalRails() {
+            const pendingContainer = document.getElementById('queue-pending');
+            const readyContainer = document.getElementById('queue-ready');
+            
+            if(!pendingContainer || !readyContainer) return;
+
+            // Compute filter contexts relative to active operational node identities
+            let targetedTickets = globalOrders.filter(o => o.order_status === 'COOKING' || o.order_status === 'READY');
+            
+            if(activeKdsUser && activeKdsUser !== 'admin') {
+                targetedTickets = targetedTickets.filter(o => {
+                    try {
+                        const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                        return items.some(i => i.stall === activeKdsUser);
+                    } catch(e) { return false; }
+                });
+            }
+
+            const renderTicketCard = (o) => {
+                let itemsListHtml = "";
+                try {
+                    const parsed = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                    const itemsToView = (activeKdsUser && activeKdsUser !== 'admin') ? parsed.filter(i => i.stall === activeKdsUser) : parsed;
+                    itemsListHtml = itemsToView.map(i => `<li><strong>${i.name}</strong> x ${i.qty}</li>`).join('');
+                } catch(e) { itemsListHtml = "<li>Error Parsing Ticket</li>"; }
+
+                const actionButton = o.order_status === 'COOKING' 
+                    ? `<button class="action-btn-green" style="margin-top:10px;" onclick="advanceTicketState(${o.id}, 'READY')">Dispatch to Ready</button>`
+                    : `<button class="action-btn-red" style="margin-top:10px; background:#7f8c8d;" onclick="advanceTicketState(${o.id}, 'DELIVERED')">Archive Order</button>`;
+
+                return `
+                    <div class="kds-ticket">
+                        <div style="display:flex; justify-content:between; align-items:center; margin-bottom:8px;">
+                            <span style="font-weight:800; color:var(--primary-accent); font-size:1.1rem;">${o.order_ref}</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted); margin-left:auto;">${new Date(o.created_at).toLocaleTimeString()}</span>
+                        </div>
+                        <p style="font-size:0.85rem; margin-bottom:6px;">Client: <strong>${o.customer_name}</strong></p>
+                        <ul style="padding-left:15px; font-size:0.9rem; margin-bottom:5px;">${itemsListHtml}</ul>
+                        ${actionButton}
+                    </div>
+                `;
+            };
+
+            const cookingStack = targetedTickets.filter(o => o.order_status === 'COOKING');
+            const readyStack = targetedTickets.filter(o => o.order_status === 'READY');
+
+            pendingContainer.innerHTML = cookingStack.map(renderTicketCard).join('') || `<p style='text-align:center; padding:20px; color:var(--text-muted);'>No items cooking</p>`;
+            readyContainer.innerHTML = readyStack.map(renderTicketCard).join('') || `<p style='text-align:center; padding:20px; color:var(--text-muted);'>No items ready</p>`;
+        }
+
+        window.advanceTicketState = async function(orderId, targetState) {
+            await _supabase.from('orders').update({ order_status: targetState }).eq('id', orderId);
+            await synchronizeSystemDataEngine();
+            if(activeKdsUser) {
+                if(activeKdsUser !== 'admin') renderStallIsolatedInterface();
+                renderKdsOperationalRails();
+            }
+        };
     </script>
 </body>
 </html>
