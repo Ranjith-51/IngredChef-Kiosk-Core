@@ -23,7 +23,7 @@
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
-            <p style="font-size:0.75rem; color:#bdc3c7; margin-top:20px;">Connected to Supabase</p>
+            <p style="font-size:0.75rem; color:#bdc3c7; margin-top:20px;">Connected to Supabase Cloud Engine</p>
         </div>
     </div>
 
@@ -80,7 +80,7 @@
                     <button id="search-btn" style="background:#34495e; color:white; border:none; padding:0 25px; border-radius:6px; font-weight:bold; cursor:pointer;">Search</button>
                 </div>
 
-                <p id="status-message" style="color:#7f8c8d; font-weight:bold;">🥣 Browse menus or filter categories to find food!</p>
+                <p id="status-message" style="color:#7f8c8d; font-weight:bold;">🥣 Loading dishes from the cloud network...</p>
                 <div id="recipe-grid" class="cards-grid"></div>
             </main>
 
@@ -122,7 +122,7 @@
                 <h1 style="color:white; margin:0; font-size:1.4rem;">IngredChef Kitchen Hub</h1>
             </div>
             <div style="display:flex; gap:15px; align-items:center;">
-                <button class="exit-workspace-btn" style="background:#34495e;" id="hub-to-kiosk-shortcut-btn">Go To Customer Kiosk 🛒</button>
+                <button class="exit-workspace-btn" style="background:#34495e;" id="hub-to-kiosk-shortcut-btn">Go To Kiosk 🛒</button>
                 <span id="active-session-identity" class="session-user-badge">Connecting Stream...</span>
             </div>
         </header>
@@ -306,6 +306,7 @@
     <!-- AUTOMATION SDK IMPLEMENTATIONS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // 🛑 PLACE YOUR SUPABASE URL AND PUBLIC KEY CODES DIRECTLY INSIDE THESE TWO STRINGS:
         const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co/rest/v1/"; 
         const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
         
@@ -317,19 +318,16 @@
                 dbClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_ANON);
                 isSupabaseConfigured = true;
             }
-        } catch(e) { console.warn("Using local shared variables state."); }
+        } catch(e) { console.warn("Supabase initialization error:", e); }
 
-        // Cache Arrays
+        // Application State
         let cart = [];
         let activeCustomer = null;
         let foodCourtStalls = [];
-        let globalCachedOrders = JSON.parse(localStorage.getItem('globalCachedOrders')) || [];
-        let globalStallMenus = JSON.parse(localStorage.getItem('globalStallMenus')) || {};
+        let globalCachedOrders = [];
         let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
         let currentStallSequences = JSON.parse(localStorage.getItem('currentStallSequences')) || {};
-
-        // Clean slate initial baseline data structure (Predefined stalls removed per request)
-        const BASELINE_MOCK_DATA = {};
+        let activeStagingPayload = null;
 
         function wipeKdsAuthInputBoxes() {
             const userBox = document.getElementById('auth-username');
@@ -342,13 +340,6 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             wipeKdsAuthInputBoxes();
-
-            Object.keys(BASELINE_MOCK_DATA).forEach(stall => {
-                if (!globalStallMenus[stall]) {
-                    globalStallMenus[stall] = [...BASELINE_MOCK_DATA[stall]];
-                }
-            });
-            localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
 
             document.getElementById('gate-to-customer-btn').addEventListener('click', launchCustomerWorkspaceView);
             document.getElementById('gate-to-kitchen-btn').addEventListener('click', () => {
@@ -416,15 +407,9 @@
             document.getElementById('view-gateway').classList.add('hidden');
             document.getElementById('view-customer-kiosk').classList.remove('hidden');
             await fetchOperationalStallData();
-            
-            if (isSupabaseConfigured) {
-                try {
-                    let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false }).limit(15);
-                    if (data) globalCachedOrders = data;
-                } catch(e) { console.log(e); }
-            }
+            await establishKitchenRealtimeSocketPipe();
             updateHistoryDashboardUI();
-            pullMealsFromWebDatabase(); // Auto loads custom food options immediately
+            pullMealsFromWebDatabase(); 
         }
 
         function saveCustomerSessionProfile() {
@@ -442,38 +427,43 @@
             banner.style.background = "#e8f8f5"; banner.style.color = "#2ecc71";
         }
 
-        /* 🛑 MEALDB API COMPLETELY SCRAPPED HERE — SEARCHES EXCLUSIVELY LOCAL PROVISIONED STALL ITEMS */
-        function pullMealsFromWebDatabase() {
+        // 🌐 SYNC CHANNELS: READS DIRECTLY FROM SUPABASE CLOUD TABLE ACROSS ALL DEVICES
+        async function pullMealsFromWebDatabase() {
             const term = document.getElementById('food-search-input').value.trim().toLowerCase();
             const msg = document.getElementById('status-message');
             
+            if (!isSupabaseConfigured) {
+                msg.textContent = "🔌 Database cloud configurations missing.";
+                return;
+            }
+
+            let { data: items, error } = await dbClient.from('menu_items').select('*');
+            if (error || !items) items = [];
+
             let combinedResults = [];
+            items.forEach(item => {
+                if (!foodCourtStalls.includes(item.stall_name)) return; 
 
-            Object.keys(globalStallMenus).forEach(stallName => {
-                if (!foodCourtStalls.includes(stallName)) return; 
-
-                globalStallMenus[stallName].forEach(item => {
-                    const matchTerm = !term || item.category.toLowerCase().includes(term) || item.name.toLowerCase().includes(term);
-                    if (matchTerm) {
-                        combinedResults.push({
-                            idMeal: item.id, 
-                            strMeal: item.name,
-                            strMealThumb: item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500", // Exact Custom Image Link Used
-                            customCost: item.price, 
-                            customStall: stallName, 
-                            customAddons: item.addons || []
-                        });
-                    }
-                });
+                const matchTerm = !term || item.category.toLowerCase().includes(term) || item.name.toLowerCase().includes(term);
+                if (matchTerm) {
+                    combinedResults.push({
+                        idMeal: item.id, 
+                        strMeal: item.name,
+                        strMealThumb: item.image_url, 
+                        customCost: item.price, 
+                        customStall: item.stall_name, 
+                        customAddons: item.addons || []
+                    });
+                }
             });
 
             if (combinedResults.length === 0) {
-                msg.textContent = term ? `❌ Zero matches found for "${term}" in your active stalls.` : "🥣 No food items registered yet. Please create stalls and items in KDS Hub.";
+                msg.textContent = "🥣 No matching menu items found from any device yet.";
                 document.getElementById('recipe-grid').innerHTML = '';
                 return;
             }
 
-            msg.textContent = term ? `Loaded ${combinedResults.length} matching selections for "${term}":` : `Displaying all ${combinedResults.length} menu delicacies:`;
+            msg.textContent = `Displaying ${combinedResults.length} menu items from cloud:`;
             displayMealCardsUI(combinedResults);
         }
 
@@ -572,7 +562,8 @@
 
             const segments = Object.keys(splitStalls).map(stallKey => {
                 if (!currentStallSequences[stallKey]) {
-                    currentStallSequences[stallKey] = { prefix: stallKey.substring(0,2).toUpperCase(), seq: 0 };
+                    const match = (window.cachedStalls || []).find(st => st.name === stallKey);
+                    currentStallSequences[stallKey] = { prefix: match ? match.prefix : stallKey.substring(0,2).toUpperCase(), seq: 0 };
                 }
                 
                 currentStallSequences[stallKey].seq += 1;
@@ -628,13 +619,11 @@
         async function pushVerifiedSessionToCoreUI() {
             if (!activeStagingPayload) return;
 
-            globalCachedOrders.unshift(activeStagingPayload);
-            localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
-
             if (isSupabaseConfigured) {
                 try { await dbClient.from('orders').insert([activeStagingPayload]); } catch (err) { console.warn(err); }
             }
 
+            await establishKitchenRealtimeSocketPipe();
             updateHistoryDashboardUI();
             document.getElementById('checkout-gateway-modal').classList.add('hidden');
             
@@ -667,17 +656,15 @@
             document.getElementById('session-status-text').style.color="#e67e22"; document.getElementById('session-status-text').style.background="#fff2e6"; 
         }
 
+        // 🌐 SYNC CHANNELS: READS INSTALLED STALLS DIRECTLY FROM SUPABASE TABLES
         async function fetchOperationalStallData() {
-            const defaultStalls = []; // Clean state start
-            const savedStalls = JSON.parse(localStorage.getItem('allStallsRegistry'));
-            
             if (isSupabaseConfigured) {
                 try {
                     let { data, error } = await dbClient.from('stalls').select('*');
-                    window.cachedStalls = (error || !data || data.length === 0) ? (savedStalls || defaultStalls) : data;
-                } catch { window.cachedStalls = savedStalls || defaultStalls; }
+                    window.cachedStalls = data || [];
+                } catch { window.cachedStalls = []; }
             } else { 
-                window.cachedStalls = savedStalls || defaultStalls; 
+                window.cachedStalls = []; 
             }
             
             foodCourtStalls = window.cachedStalls.map(s => s.name);
@@ -699,7 +686,7 @@
             if (match) {
                 activeUserSession = { username: match.name, role: "stall" };
                 finishAuthenticationRedirect();
-            } else { errMsg.textContent = "Security validation rejected. Invalid credentials."; }
+            } else { errMsg.textContent = "Security validation rejected. Invalid cloud credentials."; }
         }
 
         function finishAuthenticationRedirect() {
@@ -714,10 +701,7 @@
             if (isSupabaseConfigured) {
                 try {
                     let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false });
-                    if (data) {
-                        globalCachedOrders = data;
-                        localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
-                    }
+                    globalCachedOrders = data || [];
                 } catch(e) { console.log(e); }
             }
             renderKDSTicketsGrid();
@@ -758,39 +742,45 @@
             container.appendChild(div);
         }
 
-        function commitNewCustomMenuItemForm(e) {
+        // 🌐 SYNC CHANNELS: COMMITS MENU ITEMS DIRECTLY INTO CLOUD SUPABASE TABLE
+        async function commitNewCustomMenuItemForm(e) {
             e.preventDefault();
             if (!activeUserSession || activeUserSession.role !== 'stall') return;
 
             const targetItemId = document.getElementById('editing-item-id').value;
             const name = document.getElementById('food-name').value.trim();
-            const price = document.getElementById('food-price').value.trim();
+            const price = parseFloat(document.getElementById('food-price').value);
             const category = document.getElementById('food-category').value;
-            const imageUrl = document.getElementById('food-image-url').value.trim(); // Reads pasted image link
+            const imageUrl = document.getElementById('food-image-url').value.trim();
             
             const addonNames = document.querySelectorAll('.addon-name-input');
             const addonPrices = document.querySelectorAll('.addon-price-input');
             let parsedAddons = [];
 
             addonNames.forEach((input, index) => {
-                const aName = input.value.trim(); const aPrice = addonPrices[index].value.trim() || "0";
+                const aName = input.value.trim(); const aPrice = parseFloat(addonPrices[index].value.trim() || "0");
                 if (aName) parsedAddons.push({ name: aName, price: aPrice });
             });
 
-            if (!globalStallMenus[activeUserSession.username]) globalStallMenus[activeUserSession.username] = [];
+            const payload = {
+                stall_name: activeUserSession.username,
+                name: name,
+                price: price,
+                category: category,
+                image_url: imageUrl,
+                addons: parsedAddons
+            };
 
-            if (targetItemId) {
-                const itemIdx = globalStallMenus[activeUserSession.username].findIndex(i => i.id === targetItemId);
-                if (itemIdx !== -1) {
-                    globalStallMenus[activeUserSession.username][itemIdx] = { id: targetItemId, name, price, category, imageUrl, addons: parsedAddons };
+            if (isSupabaseConfigured) {
+                if (targetItemId) {
+                    await dbClient.from('menu_items').update(payload).eq('id', targetItemId);
+                } else {
+                    await dbClient.from('menu_items').insert([payload]);
                 }
-            } else {
-                globalStallMenus[activeUserSession.username].push({ id: 'custom-item-' + Date.now(), name, price, category, imageUrl, addons: parsedAddons });
             }
 
-            localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
             clearFormEditingState();
-            renderStallSpecificInventoryTable(activeUserSession.username);
+            await renderStallSpecificInventoryTable(activeUserSession.username);
         }
 
         function triggerFormEditMode(item) {
@@ -798,7 +788,7 @@
             document.getElementById('food-name').value = item.name;
             document.getElementById('food-price').value = item.price;
             document.getElementById('food-category').value = item.category;
-            document.getElementById('food-image-url').value = item.imageUrl || "";
+            document.getElementById('food-image-url').value = item.image_url || "";
             
             const container = document.getElementById('addons-container');
             container.innerHTML = '';
@@ -820,12 +810,18 @@
             document.getElementById('form-cancel-edit-btn').classList.add('hidden');
         }
 
-        function renderStallSpecificInventoryTable(stallName) {
+        // 🌐 SYNC CHANNELS: FETCHES LIVE ITEMS FOR INDIVIDUAL STALL MANAGER VIEW
+        async function renderStallSpecificInventoryTable(stallName) {
             const tbody = document.getElementById('stall-menu-table-body'); tbody.innerHTML = '';
-            const items = globalStallMenus[stallName] || [];
+            
+            let items = [];
+            if (isSupabaseConfigured) {
+                let { data } = await dbClient.from('menu_items').select('*').eq('stall_name', stallName);
+                items = data || [];
+            }
 
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom menu items built yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom menu items built yet. Items added here synchronize automatically across devices.</td></tr>`;
                 return;
             }
 
@@ -834,7 +830,7 @@
                 let addonsChips = item.addons.map(a => `<span style="display:inline-block; font-size:0.7rem; background:#ebf5fb; color:#2980b9; padding:2px 6px; border-radius:4px; margin-right:4px;">${a.name} (+₹${a.price})</span>`).join('');
                 
                 tr.innerHTML = `
-                    <td style="padding:8px; border:1px solid #ddd;"><img src="${item.imageUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100';"></td>
+                    <td style="padding:8px; border:1px solid #ddd;"><img src="${item.image_url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100';"></td>
                     <td style="padding:8px; border:1px solid #ddd; font-weight:bold;">${item.name}</td>
                     <td style="padding:8px; border:1px solid #ddd;"><span class="stall-tag" style="background:#34495e;">${item.category}</span></td>
                     <td style="padding:8px; border:1px solid #ddd; font-weight:bold; color:#e74c3c;">₹${item.price}</td>
@@ -845,10 +841,11 @@
                     </td>
                 `;
                 tr.querySelector('.action-edit-btn').onclick = () => triggerFormEditMode(item);
-                tr.querySelector('.vendor-del-btn').onclick = () => {
-                    globalStallMenus[stallName] = globalStallMenus[stallName].filter(i => i.id !== item.id);
-                    localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
-                    renderStallSpecificInventoryTable(stallName);
+                tr.querySelector('.vendor-del-btn').onclick = async () => {
+                    if (isSupabaseConfigured) {
+                        await dbClient.from('menu_items').delete().eq('id', item.id);
+                    }
+                    await renderStallSpecificInventoryTable(stallName);
                 };
                 tbody.appendChild(tr);
             });
@@ -861,6 +858,7 @@
             pBox.innerHTML = ''; rBox.innerHTML = ''; let pC = 0, rC = 0;
 
             globalCachedOrders.forEach(order => {
+                if (!order.stalls) return;
                 order.stalls.forEach(s => {
                     if (filter && filter !== "ALL" && s.stallName !== filter) return;
                     if (s.dismissed) return;
@@ -877,8 +875,10 @@
                     
                     card.querySelector('button').onclick = async () => {
                         s.dismissed = isDone; if (!isDone) s.etaMinutes = 0;
-                        localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
-                        renderKDSTicketsGrid();
+                        if (isSupabaseConfigured) {
+                            await dbClient.from('orders').update({ stalls: order.stalls }).eq('orderId', order.orderId);
+                        }
+                        await establishKitchenRealtimeSocketPipe();
                     };
                     if (isDone) { rBox.appendChild(card); rC++; } else { pBox.appendChild(card); pC++; }
                 });
@@ -892,17 +892,11 @@
                 const div = document.createElement('div'); div.className = "vendor-row";
                 div.innerHTML = `<span>🏪 ${s.name} [<strong>${s.prefix || '??'}</strong>]</span> <button class="vendor-del-btn">Revoke</button>`;
                 
-                div.querySelector('.vendor-del-btn').onclick = () => {
-                    const targetStall = s.name;
-                    window.cachedStalls = window.cachedStalls.filter(st => st.name !== targetStall);
-                    localStorage.setItem('allStallsRegistry', JSON.stringify(window.cachedStalls));
-                    
-                    if (globalStallMenus[targetStall]) {
-                        delete globalStallMenus[targetStall];
-                        localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
+                div.querySelector('.vendor-del-btn').onclick = async () => {
+                    if (isSupabaseConfigured) {
+                        await dbClient.from('stalls').delete().eq('name', s.name);
                     }
-                    
-                    fetchOperationalStallData();
+                    await fetchOperationalStallData();
                     renderAdminVendorListUI();
                 };
                 container.appendChild(div);
@@ -916,24 +910,21 @@
                 tr.innerHTML = `<td style="padding:8px;">${new Date(o.epochIssued).toLocaleTimeString()}</td>
                                 <td style="padding:8px;"><code>${o.orderId}</code><br><strong style="color:#2980b9; font-size:0.75rem;">${o.tokenNumber}</strong></td>
                                 <td style="padding:8px;"><strong>${o.customerName}</strong></td>
-                                <td style="padding:8px; font-size:0.75rem;">${o.stalls.map(s=>`• ${s.stallTokenId} (${s.etaMinutes===null?'Cooking':'Ready'})`).join('<br>')}</td>
+                                <td style="padding:8px; font-size:0.75rem;">${o.stalls ? o.stalls.map(s=>`• ${s.stallTokenId} (${s.etaMinutes===null?'Cooking':'Ready'})`).join('<br>') : ''}</td>
                                 <td style="padding:8px; font-weight:bold;">₹${o.grandTotal}</td>`;
                 table.appendChild(tr);
             });
         }
 
+        // 🌐 SYNC CHANNELS: PROVISIONS OUTLETS DIRECTLY INSIDE SUPABASE CLOUD
         async function registerNewVendorStall() {
             const name = document.getElementById('new-stall-name').value.trim();
             const prefix = document.getElementById('new-stall-prefix').value.trim().toUpperCase();
             const secret = document.getElementById('new-stall-password').value.trim();
             if (!name || !prefix || !secret) return alert("Fill fields entirely.");
             
-            window.cachedStalls.push({ name, prefix, secret });
-            localStorage.setItem('allStallsRegistry', JSON.stringify(window.cachedStalls));
-            
-            if (!globalStallMenus[name]) {
-                globalStallMenus[name] = [];
-                localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
+            if (isSupabaseConfigured) {
+                await dbClient.from('stalls').insert([{ name, prefix, secret }]);
             }
             
             currentStallSequences[name] = { prefix: prefix, seq: 0 };
@@ -948,9 +939,12 @@
         }
 
         async function adminClearGlobalDataLog() {
-            if (confirm("Permanently purge operational system metrics logs?")) {
-                globalCachedOrders = []; localStorage.setItem('globalCachedOrders', JSON.stringify([]));
-                renderKDSTicketsGrid(); if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
+            if (confirm("Permanently clear historical cloud ledger records?")) {
+                if (isSupabaseConfigured) {
+                    await dbClient.from('orders').delete().neq('orderId', 'placeholder');
+                }
+                await establishKitchenRealtimeSocketPipe();
+                if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
             }
         }
 
