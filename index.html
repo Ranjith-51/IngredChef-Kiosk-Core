@@ -229,7 +229,7 @@
     <div id="kds-auth-screen" class="auth-overlay hidden">
         <div class="auth-card">
             <h3 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">🔒 KDS Security Gateway</h3>
-            <input type="text" id="auth-username" class="form-input" placeholder="Stall Name Code or 'admin'">
+            <input type="text" id="auth-username" class="form-input" placeholder="Stall Name, Prefix Code, or 'admin'">
             <div class="password-input-wrapper">
                 <input type="password" id="auth-password" class="form-input" placeholder="Password Access Token" style="padding-right: 40px;">
                 <span id="kds-password-toggle" class="password-toggle-trigger">👁️</span>
@@ -484,7 +484,6 @@
                 clearBtn.addEventListener('click', async () => {
                     if (!confirm("Are you sure you want to drop all order tracking history arrays from Supabase? This action is non-reversible.")) return;
                     
-                    // Directly purges records from Supabase instead of local storage variables
                     const { error } = await _supabase.from('orders').delete().neq('id', 0);
                     
                     if (error) {
@@ -505,7 +504,17 @@
         document.getElementById('gate-to-kitchen-btn')?.addEventListener('click', () => {
             document.getElementById('kds-auth-screen').classList.remove('hidden');
         });
+        
+        // FIXED CLEAR EXCEPTION: Clears the typed textboxes when Cancel is clicked
         document.getElementById('auth-cancel-btn')?.addEventListener('click', () => {
+            const userBox = document.getElementById('auth-username');
+            const passBox = document.getElementById('auth-password');
+            if (userBox) userBox.value = '';
+            if (passBox) { passBox.value = ''; passBox.type = 'password'; }
+            
+            const toggleTrigger = document.getElementById('kds-password-toggle');
+            if(toggleTrigger) toggleTrigger.textContent = '👁️';
+
             document.getElementById('kds-auth-screen').classList.add('hidden');
         });
 
@@ -518,7 +527,11 @@
             if(inputUser === 'admin' && inputPass === 'admin123') {
                 bootKdsDashboardSession('admin');
             } else {
-                const matchingStall = globalStalls.find(s => s.prefix.toLowerCase() === inputUser && s.password === inputPass);
+                const matchingStall = globalStalls.find(s => 
+                    (s.prefix.toLowerCase() === inputUser || s.name.toLowerCase() === inputUser) && 
+                    s.password === inputPass
+                );
+                
                 if(matchingStall) {
                     bootKdsDashboardSession(matchingStall.prefix.toUpperCase());
                 } else {
