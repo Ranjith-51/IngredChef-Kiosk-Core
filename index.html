@@ -31,7 +31,7 @@
             <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" class="gateway-brand-logo" onerror="this.style.display='none'; document.getElementById('fallback-avatar').style.display='flex';">
             <div id="fallback-avatar" style="width:140px; height:140px; border-radius:50%; margin:0 auto 15px auto; background:#34495e; display:none; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold;">👨‍🍳</div>
             <h2>Welcome to IngredChef Hub</h2>
-            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace</p>
+            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace Interface</p>
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
         </div>
@@ -220,7 +220,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co"; 
-        const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
+        const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
         
         let dbClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_ANON);
         let cart = []; let activeCustomer = null; let foodCourtStalls = []; let globalCachedOrders = [];
@@ -262,34 +262,38 @@
             activeCustomer = { name, phone };
             const banner = document.getElementById('session-status-text'); banner.innerHTML = `✅ Linked Profile: <strong>${name} (${phone})</strong>`;
             banner.style.background = "#e8f8f5"; banner.style.color = "#2ecc71";
+            document.getElementById('cust-name-input').disabled = true;
+            document.getElementById('cust-phone-input').disabled = true;
+            document.getElementById('register-cust-btn').disabled = true;
         }
 
         async function refreshGlobalOrderDataPool() {
-            let { data } = await dbClient.from('orders').select('*').order('epochIssued', { ascending: false });
+            let { data } = await dbClient.from('orders').select('*').order('epoch_issued', { ascending: false });
             globalCachedOrders = data || [];
             renderKDSTicketsGrid();
             renderCustomerHistoricalLedger();
             if (activeUserSession) evaluateSessionUI();
         }
 
-        // 🕒 RENDERS HISTORICAL TIMELINE AT KIOSK FOOTER
         function renderCustomerHistoricalLedger() {
             const tbody = document.getElementById('customer-live-ledger-body');
             if (!tbody) return;
-            if (globalCachedOrders.length === 0) {
+            if (!globalCachedOrders || globalCachedOrders.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No registered transactions found in network stream.</td></tr>`;
                 return;
             }
             tbody.innerHTML = '';
             globalCachedOrders.forEach(ord => {
-                const dateStr = new Date(ord.epochIssued).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                const targetStalls = ord.stalls ? ord.stalls.map(s => `${s.stallName} (${s.stallTokenId})`).join(', ') : 'N/A';
+                const dateStr = ord.epoch_issued ? new Date(Number(ord.epoch_issued)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
+                const orderStalls = typeof ord.stalls === 'string' ? JSON.parse(ord.stalls) : ord.stalls;
+                const targetStalls = Array.isArray(orderStalls) ? orderStalls.map(s => `${s.stallName} (${s.stallTokenId})`).join(', ') : 'N/A';
+                
                 tbody.innerHTML += `<tr>
                     <td><strong>${dateStr}</strong></td>
-                    <td style="color:#3498db; font-weight:bold;">${ord.orderId}</td>
-                    <td>${ord.customerName} <small style="color:#7f8c8d;">(${ord.customerPhone})</small></td>
+                    <td style="color:#3498db; font-weight:bold;">${ord.order_id || 'N/A'}</td>
+                    <td>${ord.customer_name || 'Walk-in'} <small style="color:#7f8c8d;">(${ord.customer_phone || 'N/A'})</small></td>
                     <td>${targetStalls}</td>
-                    <td style="font-weight:bold; color:#2ecc71;">₹${ord.grandTotal}</td>
+                    <td style="font-weight:bold; color:#2ecc71;">₹${ord.grand_total || 0}</td>
                 </tr>`;
             });
         }
@@ -326,7 +330,7 @@
         function loadTransactionScreenOverlay() {
             if (!activeCustomer) return alert("Link customer profile before checking out.");
             if (cart.length === 0) return alert("Your basket is empty.");
-            let grandTotal = cart.reduce((acc, item) => acc + item.unitPrice, 0);
+            let grandTotal = cart.reduce((acc, item) => acc + Number(item.unitPrice), 0);
             document.getElementById('checkout-amount-display').textContent = `₹${grandTotal}`;
             document.getElementById('qr-target-container').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=chef@bank%26am=${grandTotal}">`;
             document.getElementById('payment-step-qr').classList.remove('hidden');
@@ -337,7 +341,7 @@
             const splitStalls = {};
             cart.forEach(c => {
                 if (!splitStalls[c.stallName]) splitStalls[c.stallName] = [];
-                splitStalls[c.stallName].push({ name: c.name, qty: c.quantity, price: c.unitPrice });
+                splitStalls[c.stallName].push({ name: c.name, qty: Number(c.quantity), price: Number(c.unitPrice) });
             });
 
             const segments = Object.keys(splitStalls).map(stallKey => {
@@ -354,13 +358,13 @@
             localStorage.setItem('currentStallSequences', JSON.stringify(currentStallSequences));
 
             activeStagingPayload = {
-                orderId: orderId,
-                tokenNumber: segments.map(s => s.stallTokenId).join(', '),
-                customerName: activeCustomer.name,
-                customerPhone: activeCustomer.phone,
-                epochIssued: Date.now(),
+                order_id: orderId,
+                token_number: segments.map(s => s.stallTokenId).join(', '),
+                customer_name: activeCustomer.name,
+                customer_phone: activeCustomer.phone,
+                epoch_issued: Date.now(),
                 stalls: segments,
-                grandTotal: grandTotal
+                grand_total: grandTotal
             };
         }
 
@@ -371,54 +375,51 @@
             cart.forEach(item => { itemizedRows += `<div class="receipt-row"><span>${item.name} (${item.stallName})</span><span>₹${item.unitPrice}</span></div>`; });
 
             area.innerHTML = `
-                <div class="receipt-header"><h2>INGREDCHEF FOOD COURT</h2><p>Order ID: ${activeStagingPayload.orderId}</p><p>Date: ${new Date().toLocaleString()}</p></div>
-                <div style="margin:10px 0;"><p><strong>Customer:</strong> ${activeStagingPayload.customerName}</p><p><strong>Tokens:</strong> ${activeStagingPayload.tokenNumber}</p></div>
+                <div class="receipt-header"><h2>INGREDCHEF FOOD COURT</h2><p>Order ID: ${activeStagingPayload.order_id}</p><p>Date: ${new Date().toLocaleString()}</p></div>
+                <div style="margin:10px 0;"><p><strong>Customer:</strong> ${activeStagingPayload.customer_name}</p><p><strong>Tokens:</strong> ${activeStagingPayload.token_number}</p></div>
                 <div style="border-bottom:1px dashed #333; margin:10px 0;"></div>${itemizedRows}<div style="border-bottom:1px dashed #333; margin:10px 0;"></div>
-                <div class="receipt-row" style="font-weight:bold; font-size:1.1rem;"><span>GRAND TOTAL:</span><span>₹${activeStagingPayload.grandTotal}</span></div>
+                <div class="receipt-row" style="font-weight:bold; font-size:1.1rem;"><span>GRAND TOTAL:</span><span>₹${activeStagingPayload.grand_total}</span></div>
             `;
             document.getElementById('payment-step-qr').classList.add('hidden');
             document.getElementById('payment-step-success').classList.remove('hidden');
         }
 
         async function pushVerifiedSessionToCoreUI() {
-    if (activeStagingPayload) {
-        // 1. Push order to cloud database
-        await dbClient.from('orders').insert([activeStagingPayload]);
-        
-        // 2. Fetch latest data so history page immediately displays the new order
-        await refreshGlobalOrderDataPool();
-    }
-    // 3. Hide the payment window overlay
-    document.getElementById('checkout-gateway-modal').classList.add('hidden');
-    
-    // 4. Run the full reset sequence for the next customer
-    resetKioskTerminalState();
-}
+            if (activeStagingPayload) {
+                try {
+                    const { error } = await dbClient.from('orders').insert([activeStagingPayload]);
+                    if (error) throw error;
+                } catch(err) {
+                    console.error("Error during execution:", err.message);
+                }
+                await refreshGlobalOrderDataPool();
+            }
+            document.getElementById('checkout-gateway-modal').classList.add('hidden');
+            resetKioskTerminalState();
+        }
 
-function resetKioskTerminalState() { 
-    // 1. Clear the functional arrays and active profile objects
-    cart = []; 
-    activeCustomer = null; 
-    activeStagingPayload = null;
+        function resetKioskTerminalState() { 
+            cart = []; 
+            activeCustomer = null; 
+            activeStagingPayload = null;
+            
+            renderBasketUI(); 
 
-    // 2. Clear UI basket components
-    renderBasketUI(); 
+            // Wipe input values cleanly
+            document.getElementById('cust-name-input').value = '';
+            document.getElementById('cust-phone-input').value = '';
+            
+            // Re-enable elements
+            document.getElementById('cust-name-input').disabled = false;
+            document.getElementById('cust-phone-input').disabled = false;
+            document.getElementById('register-cust-btn').disabled = false;
 
-    // 3. Explicitly wipe input fields so the old customer's details disappear
-    document.getElementById('cust-name-input').value = '';
-    document.getElementById('cust-phone-input').value = '';
-    
-    // 4. Enable the fields again for the next user
-    document.getElementById('cust-name-input').disabled = false;
-    document.getElementById('cust-phone-input').disabled = false;
-    document.getElementById('register-cust-btn').disabled = false;
+            const banner = document.getElementById('session-status-text');
+            banner.innerHTML = `⚠️ No profile linked. Please register details before checking out.`; 
+            banner.style.background = "#fff3cd"; 
+            banner.style.color = "#856404"; 
+        }
 
-    // 5. Reset the yellow notification warning status banner at the top
-    const banner = document.getElementById('session-status-text');
-    banner.innerHTML = `⚠️ No profile linked. Please register details before checking out.`; 
-    banner.style.background = "#fff3cd"; 
-    banner.style.color = "#856404"; 
-}
         async function fetchOperationalStallData() {
             let { data } = await dbClient.from('stalls').select('*'); window.cachedStalls = data || [];
             foodCourtStalls = window.cachedStalls.map(s => s.name);
@@ -435,25 +436,26 @@ function resetKioskTerminalState() {
 
         function finishAuthenticationRedirect() { sessionStorage.setItem('activeHubUser', JSON.stringify(activeUserSession)); document.getElementById('kds-auth-screen').classList.add('hidden'); document.getElementById('view-gateway').classList.add('hidden'); document.getElementById('view-kitchen-hub').classList.remove('hidden'); refreshGlobalOrderDataPool(); }
 
-        // 📊 FIXED FINANCIAL COMPUTATION SYSTEM (PERSISTS EVEN AFTER TICKET REMOVAL)
         function evaluateSessionUI() {
             if (!activeUserSession) return;
             document.getElementById('active-session-identity').textContent = `👤 Logged: ${activeUserSession.username.toUpperCase()}`;
             
             let totalStallSales = 0;
             const adminSalesTracker = {};
-            window.cachedStalls.forEach(v => adminSalesTracker[v.name] = 0);
+            (window.cachedStalls || []).forEach(v => adminSalesTracker[v.name] = 0);
 
-            // Calculate metrics using all records in the full architectural pool
             globalCachedOrders.forEach(order => {
-                if (order.stalls) {
-                    order.stalls.forEach(seg => {
-                        let segmentCost = seg.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-                        if (seg.stallName === activeUserSession.username) {
-                            totalStallSales += segmentCost;
-                        }
-                        if (adminSalesTracker[seg.stallName] !== undefined) {
-                            adminSalesTracker[seg.stallName] += segmentCost;
+                const orderStalls = typeof order.stalls === 'string' ? JSON.parse(order.stalls) : order.stalls;
+                if (orderStalls && Array.isArray(orderStalls)) {
+                    orderStalls.forEach(seg => {
+                        if (seg.items && Array.isArray(seg.items)) {
+                            let segmentCost = seg.items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || 1)), 0);
+                            if (seg.stallName === activeUserSession.username) {
+                                totalStallSales += segmentCost;
+                            }
+                            if (adminSalesTracker[seg.stallName] !== undefined) {
+                                adminSalesTracker[seg.stallName] += segmentCost;
+                            }
                         }
                     });
                 }
@@ -472,17 +474,15 @@ function resetKioskTerminalState() {
             }
         }
 
-        // 🔄 ADMIN OVERRIDE RESET MECHANISM (RESTORES DATA METRICS TO ZERO)
         async function executeGlobalSalesReset() {
             if (!confirm("Are you sure you want to reset all operational revenue analytics dashboards to zero? This updates past ticket history registers.")) return;
-            
-            // Loop through and archive/zero-out item metrics across the segments database entries
             for (let order of globalCachedOrders) {
-                if (order.stalls) {
-                    let altered = order.stalls.map(s => {
-                        return { ...s, items: s.items.map(i => ({ ...i, price: 0 })) };
+                const orderStalls = typeof order.stalls === 'string' ? JSON.parse(order.stalls) : order.stalls;
+                if (orderStalls && Array.isArray(orderStalls)) {
+                    let altered = orderStalls.map(s => {
+                        return { ...s, items: (s.items || []).map(i => ({ ...i, price: 0 })) };
                     });
-                    await dbClient.from('orders').update({ stalls: altered, grandTotal: 0 }).eq('orderId', order.orderId);
+                    await dbClient.from('orders').update({ stalls: altered, grand_total: 0 }).eq('order_id', order.order_id);
                 }
             }
             alert("All stall financial balances successfully returned to zero!");
@@ -541,8 +541,10 @@ function resetKioskTerminalState() {
             if(!pBox || !rBox) return; pBox.innerHTML = ''; rBox.innerHTML = '';
             
             globalCachedOrders.forEach(order => {
-                if (!order.stalls) return;
-                order.stalls.forEach(s => {
+                const orderStalls = typeof order.stalls === 'string' ? JSON.parse(order.stalls) : order.stalls;
+                if (!orderStalls || !Array.isArray(orderStalls)) return;
+                
+                orderStalls.forEach(s => {
                     if (filter && filter !== "ALL" && s.stallName !== filter) return;
                     if (s.dismissed) return;
                     
@@ -554,9 +556,9 @@ function resetKioskTerminalState() {
                     
                     card.querySelector('button').onclick = async () => {
                         s.dismissed = isDone; 
-                        if (!isDone) s.etaMinutes = 0; // Mark as ready
+                        if (!isDone) s.etaMinutes = 0; 
                         
-                        await dbClient.from('orders').update({ stalls: order.stalls }).eq('orderId', order.orderId);
+                        await dbClient.from('orders').update({ stalls: orderStalls }).eq('order_id', order.order_id);
                         await refreshGlobalOrderDataPool();
                     };
                     if (isDone) rBox.appendChild(card); else pBox.appendChild(card);
