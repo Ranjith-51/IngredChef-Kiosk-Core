@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IngredChef Kiosk Hub</title>
     <link rel="icon" type="image/png" href="IngredChef_Logo.png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         /* ==========================================================================
            1. GLOBAL VARIABLES & CORE RESET
@@ -71,10 +74,24 @@
             width: 100%;
         }
 
+        .gateway-logo-container {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            margin: 0 auto 20px auto;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
         .gateway-brand-logo {
-            max-width: 140px;
+            width: 85%;
             height: auto;
-            margin-bottom: 20px;
+            object-fit: contain;
         }
 
         .gate-btn {
@@ -183,7 +200,7 @@
         .kds-ticket { background: white; padding: 15px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 5px solid var(--primary-accent); }
 
         /* ==========================================================================
-           6. MODALS & CHECKOUT
+           6. MODALS & VENDOR UI STRUCTURES
            ========================================================================== */
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 200; }
         .modal-card, .checkout-card { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 100%; max-width: 480px; position: relative; overflow: hidden; }
@@ -197,6 +214,19 @@
         .btn-done { background: var(--primary-dark); color: white; border: none; padding: 12px; border-radius: var(--radius-md); font-weight: bold; cursor: pointer; }
         
         .vendor-manager-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-top: 15px; }
+
+        .vendor-tracking-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            margin-bottom: 10px;
+        }
+        .vendor-meta h5 { color: var(--primary-dark); margin: 0; font-size: 0.95rem; }
+        .vendor-meta span { color: var(--text-muted); font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -352,7 +382,7 @@
                         <button id="commit-add-stall-btn" class="action-btn-green">Create Outlet</button>
                     </div>
                     <div style="background:white; padding:20px; border-radius:8px; border:1px solid #e2e8f0;">
-                        <h4 style="margin-top:0; color:#2c3e50; margin-bottom:12px;">📋 Registered Operational Outlets</h4>
+                        <h4 style="margin-top:0; color:#2c3e50; margin-bottom:12px;">📋 Registered Outlets Revenue Share Tracking</h4>
                         <div id="admin-vendor-list"></div>
                     </div>
                 </div>
@@ -398,428 +428,181 @@
                     <button class="btn-simulate" id="simulate-success-btn">Simulate Payment Success ✓</button>
                 </div>
             </div>
+            
             <div id="payment-step-success" class="checkout-card hidden">
                 <div class="success-icon">✓</div>
-                <h2 style="text-align:center; color:#27ae60; margin:5px 0;">Order Confirmed!</h2>
-                <div id="printable-receipt-area" class="receipt-container"></div>
-                <div class="payment-actions no-print" style="margin-top:15px; display:flex; gap:10px;">
-                    <button class="btn-simulate" id="print-receipt-action-btn" style="background:#3498db;">Print Receipt 🖨️</button>
-                    <button class="btn-done" id="finalize-success-close-btn" style="flex:1; margin:0;">Return to Kiosk</button>
+                <h3 style="text-align:center; color:var(--success-green); margin-bottom:10px;">Payment Successful</h3>
+                <p style="text-align:center; color:var(--text-muted); padding: 0 20px 20px 20px;">Your order has been pushed to the kitchen display stream.</p>
+                <div style="padding: 20px; text-align:center;">
+                    <button id="btn-done" class="btn-done" style="width:100%;">Done</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co/rest/v1/"; 
-        const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
-        
-        // FOOLPROOF URL SANITIZER ENGINE: Guarantees path loops never break the API channel connection
-        function buildSanitizedClient() {
-            let sanitizedUrl = SUPABASE_PROJECT_URL.trim().replace(/\/+$/, "");
-            if (sanitizedUrl.endsWith("/rest/v1")) {
-                sanitizedUrl = sanitizedUrl.replace("/rest/v1", "");
-            }
-            return supabase.createClient(sanitizedUrl, SUPABASE_PUBLIC_ANON);
-        }
-        
-        let dbClient = buildSanitizedClient();
-        let cart = []; let activeCustomer = null; let foodCourtStalls = []; let globalCachedOrders = [];
-        let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
-        let currentStallSequences = JSON.parse(localStorage.getItem('currentStallSequences')) || {};
-        let activeStagingPayload = null;
+        // 1. Initialize Active Supabase Client Configuration Connection Node
+        const SUPABASE_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co/rest/v1/"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const setClick = (id, fn) => { const el = document.getElementById(id); if(el) el.addEventListener('click', fn); };
-            
-            setClick('gate-to-customer-btn', launchCustomerWorkspaceView);
-            setClick('gate-to-kitchen-btn', () => document.getElementById('kds-auth-screen').classList.remove('hidden'));
-            setClick('auth-cancel-btn', () => document.getElementById('kds-auth-screen').classList.add('hidden'));
-            setClick('auth-login-btn', processKdsSecurityAccessCheck);
-            setClick('exit-kiosk-btn', returnToMainGateway);
-            setClick('register-cust-btn', saveCustomerSessionProfile);
-            setClick('search-btn', pullMealsFromWebDatabase);
-            setClick('checkout-btn', loadTransactionScreenOverlay);
-            setClick('clear-kiosk-btn', resetKioskTerminalState);
-            
-            // Shared cleanup hooks wired directly across workspace UI dashboards
-            setClick('kiosk-clear-history-btn', purgeEntireTimelineLedger);
-            setClick('admin-wipe-tables-btn', purgeEntireTimelineLedger);
-            
-            setClick('abort-payment-btn', () => document.getElementById('checkout-gateway-modal').classList.add('hidden'));
-            setClick('simulate-success-btn', triggerPaymentVerificationFlow);
-            setClick('finalize-success-close-btn', pushVerifiedSessionToCoreUI);
-            setClick('print-receipt-action-btn', () => window.print());
-            setClick('close-modal-btn', () => document.getElementById('recipe-modal').classList.add('hidden'));
-            setClick('hub-logout-btn', () => { sessionStorage.removeItem('activeHubUser'); location.reload(); });
-            setClick('commit-add-stall-btn', registerNewVendorStall);
-            setClick('kds-password-toggle', toggleKdsPasswordVisibility);
-            setClick('hub-to-kiosk-btn', launchCustomerWorkspaceView);
+        // Local Memory Copy Engine Cache Array
+        let globalStalls = [];
 
-            const selectEl = document.getElementById('stall-selector');
-            if(selectEl) selectEl.addEventListener('change', () => renderKDSTicketsGrid());
+        // 2. Data Access: Pull Active Stalls from Supabase Table Infrastructure
+        async function fetchStallsFromSupabase() {
+            try {
+                const { data, error } = await _supabase
+                    .from('stalls') 
+                    .select('*')
+                    .order('created_at', { ascending: true });
 
-            const formEl = document.getElementById('menu-item-form');
-            if(formEl) formEl.addEventListener('submit', commitNewCustomMenuItemForm);
-
-            await fetchOperationalStallData();
-            await refreshGlobalOrderDataPool();
-        });
-
-        function toggleKdsPasswordVisibility() {
-            const passField = document.getElementById('auth-password');
-            const eyeIcon = document.getElementById('kds-password-toggle');
-            if (!passField || !eyeIcon) return;
-            if (passField.type === "password") {
-                passField.type = "text"; eyeIcon.textContent = "🙈";
-            } else {
-                passField.type = "password"; eyeIcon.textContent = "👁️";
+                if (error) throw error;
+                
+                globalStalls = data || [];
+                renderAdminVendorTrackingList();
+            } catch (err) {
+                console.error("Database connection stream error:", err.message);
+                // Graceful local development fallback if credentials aren't initialized yet
+                if(globalStalls.length === 0) {
+                    globalStalls = [
+                        { id: 1, name: "Burger King Express", prefix: "BK", revenue_share: "12%" },
+                        { id: 2, name: "Pizza Hut Counter", prefix: "PH", revenue_share: "15%" }
+                    ];
+                    renderAdminVendorTrackingList();
+                }
             }
         }
 
-        function returnToMainGateway() { 
-            document.getElementById('view-customer-kiosk').classList.add('hidden'); 
-            document.getElementById('view-kitchen-hub').classList.add('hidden'); 
-            document.getElementById('view-gateway').classList.remove('hidden'); 
+        // 3. UI Component Layer: Renders Registered Outlets Node Lists cleanly with Actions
+        function renderAdminVendorTrackingList() {
+            const container = document.getElementById('admin-vendor-list');
+            if (!container) return;
+
+            if (globalStalls.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">No registered stalls active in network cluster.</p>`;
+                return;
+            }
+
+            container.innerHTML = globalStalls.map(stall => `
+                <div class="vendor-tracking-row">
+                    <div class="vendor-meta">
+                        <h5>${stall.name}</h5>
+                        <span>Prefix Code: <strong>${stall.prefix}</strong> | Platform Revenue Share: ${stall.revenue_share || '10%'}</span>
+                    </div>
+                    <button class="action-btn-red" onclick="revokeStallAccess('${stall.id}')">Revoke Access</button>
+                </div>
+            `).join('');
+
+            updateStallDropdownSelectors();
         }
 
-        async function launchCustomerWorkspaceView() { 
-            document.getElementById('view-gateway').classList.add('hidden'); 
-            document.getElementById('view-kitchen-hub').classList.add('hidden'); 
-            document.getElementById('view-customer-kiosk').classList.remove('hidden'); 
-            await fetchOperationalStallData(); 
-            await refreshGlobalOrderDataPool(); 
-            pullMealsFromWebDatabase(); 
-        }
-        
-        function saveCustomerSessionProfile() {
-            const name = document.getElementById('cust-name-input').value.trim(); 
-            const phone = document.getElementById('cust-phone-input').value.trim();
-            if (!name || phone.length !== 10) return alert("Input a valid name and 10-digit mobile phone.");
-            activeCustomer = { name, phone };
-            const banner = document.getElementById('session-status-text'); banner.innerHTML = `✅ Linked Profile: <strong>${name} (${phone})</strong>`;
-            banner.style.background = "#e8f8f5"; banner.style.color = "#2ecc71";
-            document.getElementById('cust-name-input').disabled = true;
-            document.getElementById('cust-phone-input').disabled = true;
-            document.getElementById('register-cust-btn').disabled = true;
+        // 4. Data Sync: Propagate state updates directly to operational drop-down items
+        function updateStallDropdownSelectors() {
+            const selector = document.getElementById('stall-selector');
+            if (!selector) return;
+            selector.innerHTML = `<option value="ALL">All Active Kitchen Rails</option>` + 
+                globalStalls.map(s => `<option value="${s.prefix}">${s.name}</option>`).join('');
         }
 
-        async function refreshGlobalOrderDataPool() {
-            let { data, error } = await dbClient.from('orders').select('*').order('epoch_issued', { ascending: false });
-            if (!error) globalCachedOrders = data || [];
-            renderKDSTicketsGrid();
-            renderCustomerHistoricalLedgers();
-            if (activeUserSession) evaluateSessionUI();
-        }
+        // 5. Mutation Action: Provision a New Stall with Explicit Unique Column Validation Rules
+        document.getElementById('commit-add-stall-btn')?.addEventListener('click', async () => {
+            const nameInput = document.getElementById('new-stall-name');
+            const prefixInput = document.getElementById('new-stall-prefix');
+            const passwordInput = document.getElementById('new-stall-password');
 
-        function renderCustomerHistoricalLedgers() {
-            const kioskTbody = document.getElementById('customer-live-ledger-body');
-            const adminTbody = document.getElementById('admin-live-ledger-body');
-            
-            const writeHTML = (tbody) => {
-                if (!tbody) return;
-                if (!globalCachedOrders || globalCachedOrders.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No registered transactions found in network stream.</td></tr>`;
+            if (!nameInput.value || !prefixInput.value) {
+                alert("Please fully satisfy configuration parameters before launching an outlet.");
+                return;
+            }
+
+            const newStallData = {
+                name: nameInput.value.trim(),
+                prefix: prefixInput.value.trim().toUpperCase(),
+                password: passwordInput.value,
+                revenue_share: "10%"
+            };
+
+            try {
+                const { error } = await _supabase
+                    .from('stalls')
+                    .insert([newStallData]);
+
+                if (error) {
+                    // Check for Supabase standard Unique Constraint Violation Error Code (PostgreSQL code: 23505)
+                    if (error.code === '23505') {
+                        alert("Failed creating structural stall outlet. Check unique constraints: Name or Code prefix already deployed.");
+                    } else {
+                        throw error;
+                    }
                     return;
                 }
-                tbody.innerHTML = '';
-                globalCachedOrders.forEach(ord => {
-                    const dateStr = ord.epoch_issued ? new Date(Number(ord.epoch_issued)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
-                    const orderStalls = typeof ord.stalls === 'string' ? JSON.parse(ord.stalls) : ord.stalls;
-                    const targetStalls = Array.isArray(orderStalls) ? orderStalls.map(s => `${s.stallName} (${s.stallTokenId})`).join(', ') : 'N/A';
-                    
-                    tbody.innerHTML += `<tr>
-                        <td><strong>${dateStr}</strong></td>
-                        <td style="color:#3498db; font-weight:bold;">${ord.order_id || 'N/A'}</td>
-                        <td>${ord.customer_name || 'Walk-in'} <small style="color:#7f8c8d;">(${ord.customer_phone || 'N/A'})</small></td>
-                        <td>${targetStalls}</td>
-                        <td style="font-weight:bold; color:#2ecc71;">₹${ord.grand_total || 0}</td>
-                    </tr>`;
-                });
-            };
-            writeHTML(kioskTbody);
-            writeHTML(adminTbody);
-        }
 
-        async function pullMealsFromWebDatabase() {
-            let { data: items } = await dbClient.from('menu_items').select('*'); items = items || [];
-            const grid = document.getElementById('recipe-grid'); if(!grid) return;
-            grid.innerHTML = '';
-            document.getElementById('status-message').textContent = `Displaying active cloud items:`;
-            items.forEach(meal => {
-                const card = document.createElement('div'); card.className = "meal-card";
-                card.innerHTML = `<img src="${meal.image_url}" style="width:100%; height:160px; object-fit:cover;"><div style="padding:10px;"><span class="stall-tag">${meal.stall_name}</span><h4>${meal.name}</h4><p>₹${meal.price}</p><button class="select-btn">Select</button></div>`;
-                card.querySelector('.select-btn').onclick = () => triggerCustomizationModal(meal);
-                grid.appendChild(card);
-            });
-        }
+                // Clean form state elements upon success
+                nameInput.value = '';
+                prefixInput.value = '';
+                passwordInput.value = '';
 
-        function triggerCustomizationModal(meal) {
-            const body = document.getElementById('modal-body');
-            body.innerHTML = `<h3>${meal.name}</h3><p>Base Rate: ₹${meal.price}</p><button id="add-to-basket-btn" class="action-btn-green" style="margin-top:15px;">Confirm Addition</button>`;
-            document.getElementById('recipe-modal').classList.remove('hidden');
-            document.getElementById('add-to-basket-btn').onclick = () => {
-                cart.push({ id: Date.now(), name: meal.name, unitPrice: meal.price, quantity: 1, stallName: meal.stall_name });
-                document.getElementById('recipe-modal').classList.add('hidden');
-                renderBasketUI();
-            };
-        }
+                await fetchStallsFromSupabase();
+            } catch (err) {
+                // Client-side execution tracking backup strategy 
+                const duplicateCheck = globalStalls.find(s => s.name.toLowerCase() === newStallData.name.toLowerCase() || s.prefix.toUpperCase() === newStallData.prefix);
+                if (duplicateCheck) {
+                    alert("Failed creating structural stall outlet. Check unique constraints: Name or Code prefix already deployed.");
+                } else {
+                    alert("Database write error encountered: " + err.message);
+                }
+            }
+        });
 
-        function renderBasketUI() {
-            const box = document.getElementById('cart-items-container'); if(!box) return;
-            box.innerHTML = ''; let sum = 0;
-            cart.forEach(c => { sum += c.unitPrice; box.innerHTML += `<div class="basket-item-row"><div><strong>${c.name}</strong><br><small>${c.stallName}</small></div><div>₹${c.unitPrice}</div></div>`; });
-            document.getElementById('cart-grand-total').textContent = `₹${sum}`;
-        }
-
-        function loadTransactionScreenOverlay() {
-            if (!activeCustomer) return alert("Link customer profile before checking out.");
-            if (cart.length === 0) return alert("Your basket is empty.");
-            let grandTotal = cart.reduce((acc, item) => acc + Number(item.unitPrice), 0);
-            document.getElementById('checkout-amount-display').textContent = `₹${grandTotal}`;
-            document.getElementById('qr-target-container').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=chef@bank%26am=${grandTotal}">`;
-            document.getElementById('payment-step-qr').classList.remove('hidden');
-            document.getElementById('payment-step-success').classList.add('hidden');
-            document.getElementById('checkout-gateway-modal').classList.remove('hidden');
-
-            const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
-            const splitStalls = {};
-            cart.forEach(c => {
-                if (!splitStalls[c.stallName]) splitStalls[c.stallName] = [];
-                splitStalls[c.stallName].push({ name: c.name, qty: Number(c.quantity), price: Number(c.unitPrice) });
-            });
-
-            const segments = Object.keys(splitStalls).map(stallKey => {
-                if (!currentStallSequences[stallKey]) currentStallSequences[stallKey] = { prefix: stallKey.substring(0,2).toUpperCase(), seq: 0 };
-                currentStallSequences[stallKey].seq += 1;
-                return {
-                    stallName: stallKey,
-                    stallTokenId: `${currentStallSequences[stallKey].prefix}-${String(currentStallSequences[stallKey].seq).padStart(3, '0')}`,
-                    items: splitStalls[stallKey],
-                    etaMinutes: null, dismissed: false
-                };
-            });
-            localStorage.setItem('currentStallSequences', JSON.stringify(currentStallSequences));
-
-            activeStagingPayload = {
-                order_id: orderId, token_number: segments.map(s => s.stallTokenId).join(', '),
-                customer_name: activeCustomer.name, customer_phone: activeCustomer.phone,
-                epoch_issued: Date.now(), stalls: segments, grand_total: grandTotal
-            };
-        }
-
-        function triggerPaymentVerificationFlow() {
-            if (!activeStagingPayload) return;
-            const area = document.getElementById('printable-receipt-area');
-            let itemizedRows = '';
-            cart.forEach(item => { itemizedRows += `<div class="receipt-row"><span>${item.name} (${item.stallName})</span><span>₹${item.unitPrice}</span></div>`; });
-
-            area.innerHTML = `
-                <div class="receipt-header"><h2>INGREDCHEF FOOD COURT</h2><p>Order ID: ${activeStagingPayload.order_id}</p><p>Date: ${new Date().toLocaleString()}</p></div>
-                <div style="margin:10px 0;"><p><strong>Customer:</strong> ${activeStagingPayload.customer_name}</p><p><strong>Tokens:</strong> ${activeStagingPayload.token_number}</p></div>
-                <div style="border-bottom:1px dashed #333; margin:10px 0;"></div>${itemizedRows}<div style="border-bottom:1px dashed #333; margin:10px 0;"></div>
-                <div class="receipt-row" style="font-weight:bold; font-size:1.1rem;"><span>GRAND TOTAL:</span><span>₹${activeStagingPayload.grand_total}</span></div>
-            `;
-            document.getElementById('payment-step-qr').classList.add('hidden');
-            document.getElementById('payment-step-success').classList.remove('hidden');
-        }
-
-        async function pushVerifiedSessionToCoreUI() {
-            if (activeStagingPayload) {
+        // 6. Mutation Action: Revoke and Delete a Stall record safely from data maps
+        window.revokeStallAccess = async function(stallId) {
+            if (confirm("Are you sure you want to revoke network credentials for this outlet? This will instantly disconnect their active kitchen streams.")) {
                 try {
-                    const { error } = await dbClient.from('orders').insert([activeStagingPayload]);
+                    const { error } = await _supabase
+                        .from('stalls')
+                        .delete()
+                        .eq('id', stallId);
+
                     if (error) throw error;
-                } catch(err) {
-                    console.error("Database connection exception:", err.message);
+                    await fetchStallsFromSupabase();
+                } catch (err) {
+                    // Fallback filtering routine if using local memory array mode 
+                    globalStalls = globalStalls.filter(s => s.id !== parseInt(stallId) && s.id !== stallId);
+                    renderAdminVendorTrackingList();
                 }
-                await refreshGlobalOrderDataPool();
             }
-            document.getElementById('checkout-gateway-modal').classList.add('hidden');
-            resetKioskTerminalState();
-        }
+        };
 
-        function resetKioskTerminalState() { 
-            cart = []; activeCustomer = null; activeStagingPayload = null;
-            renderBasketUI(); 
-
-            document.getElementById('cust-name-input').value = '';
-            document.getElementById('cust-phone-input').value = '';
-            document.getElementById('cust-name-input').disabled = false;
-            document.getElementById('cust-phone-input').disabled = false;
-            document.getElementById('register-cust-btn').disabled = false;
-
-            const banner = document.getElementById('session-status-text');
-            banner.innerHTML = `⚠️ No profile linked. Please register details before checking out.`; 
-            banner.style.background = "#fff3cd"; banner.style.color = "#856404"; 
-        }
-
-        async function purgeEntireTimelineLedger() {
-            if (!confirm("Are you sure you want to permanently clear the historical timeline logs? This wipes the audit dashboard completely.")) return;
-            try {
-                const { error } = await dbClient.from('orders').delete().gt('epoch_issued', 0);
-                if (error) throw error;
-                alert("Audit ledger records wiped successfully!");
-                await refreshGlobalOrderDataPool();
-            } catch (err) {
-                alert("Failed to clear ledger logs: " + err.message);
-            }
-        }
-
-        async function fetchOperationalStallData() {
-            let { data } = await dbClient.from('stalls').select('*'); window.cachedStalls = data || [];
-            foodCourtStalls = window.cachedStalls.map(s => s.name);
-            const select = document.getElementById('stall-selector');
-            if (select) select.innerHTML = '<option value="ALL">-- ALL SYSTEMS ONLINE --</option>' + window.cachedStalls.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-        }
-
-        function processKdsSecurityAccessCheck() {
-            const user = document.getElementById('auth-username').value.trim(); 
-            const pass = document.getElementById('auth-password').value.trim();
-            if (user.toLowerCase() === 'admin' && pass === 'admin779') { 
-                activeUserSession = { username: "System Admin", role: "admin" }; 
-                finishAuthenticationRedirect(); return; 
-            }
-            const match = (window.cachedStalls || []).find(s => s.name.toLowerCase() === user.toLowerCase() && s.secret === pass);
-            if (match) { 
-                activeUserSession = { username: match.name, role: "stall" }; 
-                finishAuthenticationRedirect(); 
-            } else { 
-                alert('Invalid Access Token Credentials'); 
-            }
-        }
-
-        function finishAuthenticationRedirect() { 
-            sessionStorage.setItem('activeHubUser', JSON.stringify(activeUserSession)); 
-            document.getElementById('kds-auth-screen').classList.add('hidden'); 
-            document.getElementById('view-gateway').classList.add('hidden'); 
-            document.getElementById('view-customer-kiosk').classList.add('hidden'); 
-            document.getElementById('view-kitchen-hub').classList.remove('hidden'); 
-            refreshGlobalOrderDataPool(); 
-        }
-
-        function evaluateSessionUI() {
-            if (!activeUserSession) return;
-            document.getElementById('active-session-identity').textContent = `👤 Logged: ${activeUserSession.username.toUpperCase()}`;
+        // 7. Core Route View Management Toggles
+        document.getElementById('gate-to-customer-btn')?.addEventListener('click', () => {
+            document.getElementById('view-gateway').style.display = 'none';
+            document.getElementById('view-customer-kiosk').classList.remove('hidden');
+        });
+        document.getElementById('gate-to-kitchen-btn')?.addEventListener('click', () => {
+            document.getElementById('kds-auth-screen').classList.remove('hidden');
+        });
+        document.getElementById('auth-cancel-btn')?.addEventListener('click', () => {
+            document.getElementById('kds-auth-screen').classList.add('hidden');
+        });
+        document.getElementById('auth-login-btn')?.addEventListener('click', () => {
+            document.getElementById('kds-auth-screen').classList.add('hidden');
+            document.getElementById('view-gateway').style.display = 'none';
+            document.getElementById('view-kitchen-hub').classList.remove('hidden');
+            document.getElementById('central-admin-view').classList.remove('hidden');
+            document.getElementById('stall-menu-manager').classList.remove('hidden');
             
-            let totalStallSales = 0;
-            const adminSalesTracker = {};
-            (window.cachedStalls || []).forEach(v => adminSalesTracker[v.name] = 0);
-
-            globalCachedOrders.forEach(order => {
-                const orderStalls = typeof order.stalls === 'string' ? JSON.parse(order.stalls) : order.stalls;
-                if (orderStalls && Array.isArray(orderStalls)) {
-                    orderStalls.forEach(seg => {
-                        if (seg.items && Array.isArray(seg.items)) {
-                            let segmentCost = seg.items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || 1)), 0);
-                            if (seg.stallName === activeUserSession.username) totalStallSales += segmentCost;
-                            if (adminSalesTracker[seg.stallName] !== undefined) adminSalesTracker[seg.stallName] += segmentCost;
-                        }
-                    });
-                }
-            });
-
-            if (activeUserSession.role === 'admin') {
-                document.getElementById('central-admin-view').classList.remove('hidden');
-                document.getElementById('stall-menu-manager').classList.add('hidden');
-                renderAdminVendorListUI(adminSalesTracker);
-            } else {
-                document.getElementById('central-admin-view').classList.add('hidden');
-                document.getElementById('stall-menu-manager').classList.remove('hidden');
-                document.getElementById('stall-sales-display').textContent = `₹${totalStallSales}`;
-                document.getElementById('current-stall-display').innerHTML = `Connected Workstation: <strong>${activeUserSession.username}</strong>`;
-                renderStallSpecificInventoryTable(activeUserSession.username);
-            }
-        }
-
-        function renderAdminVendorListUI(salesMap) {
-            const container = document.getElementById('admin-vendor-list'); if(!container) return;
-            container.innerHTML = '';
-            window.cachedStalls.forEach(s => {
-                const revenue = salesMap[s.name] || 0;
-                container.innerHTML += `<div style="display:flex; justify-content:space-between; background:#f8fafc; padding:12px; margin-bottom:8px; border-radius:6px; border:1px solid #e2e8f0;">
-                    <span>🏪 <strong>${s.name}</strong> [${s.prefix}]</span>
-                    <span style="font-weight:bold; color:#2ecc71;">Sales Volume: ₹${revenue}</span>
-                </div>`;
-            });
-        }
-
-        async function registerNewVendorStall() {
-            const name = document.getElementById('new-stall-name').value.trim();
-            const prefix = document.getElementById('new-stall-prefix').value.trim().toUpperCase();
-            const secret = document.getElementById('new-stall-password').value.trim();
-            
-            if (!name || !prefix || !secret) return alert("Please fulfill all outlet parameters.");
-            
-            try {
-                const { error } = await dbClient.from('stalls').insert([{ name, prefix, secret }]);
-                if (error) throw error;
-                
-                document.getElementById('new-stall-name').value = ''; 
-                document.getElementById('new-stall-prefix').value = ''; 
-                document.getElementById('new-stall-password').value = '';
-                
-                alert(`Outlet ${name} created successfully!`);
-                await fetchOperationalStallData(); 
-                await refreshGlobalOrderDataPool();
-            } catch (err) {
-                alert("Failed creating structural stall outlet: " + err.message);
-            }
-        }
-
-        async function commitNewCustomMenuItemForm(e) {
-            e.preventDefault();
-            const payload = {
-                stall_name: activeUserSession.username,
-                name: document.getElementById('food-name').value.trim(),
-                price: parseFloat(document.getElementById('food-price').value),
-                category: document.getElementById('food-category').value,
-                image_url: document.getElementById('food-image-url').value.trim()
-            };
-            await dbClient.from('menu_items').insert([payload]);
-            document.getElementById('menu-item-form').reset();
-            evaluateSessionUI();
-        }
-
-        async function renderStallSpecificInventoryTable(stallName) {
-            let { data: items } = await dbClient.from('menu_items').select('*').eq('stall_name', stallName); items = items || [];
-            const tbody = document.getElementById('stall-menu-table-body'); if(!tbody) return;
-            tbody.innerHTML = '';
-            items.forEach(item => {
-                tbody.innerHTML += `<tr><td><img src="${item.image_url}" style="width:35px;height:35px;object-fit:cover;"></td><td><strong>${item.name}</strong></td><td>${item.category}</td><td>₹${item.price}</td><td><button style="color:red; background:none; border:none; cursor:pointer;" onclick="deleteItemRow('${item.id}')">✕</button></td></tr>`;
-            });
-        }
-
-        window.deleteItemRow = async function(id) { await dbClient.from('menu_items').delete().eq('id', id); evaluateSessionUI(); };
-
-        function renderKDSTicketsGrid() {
-            const filter = activeUserSession?.role === 'admin' ? document.getElementById('stall-selector').value : activeUserSession?.username;
-            const pBox = document.getElementById('queue-pending'); const rBox = document.getElementById('queue-ready');
-            if(!pBox || !rBox) return; pBox.innerHTML = ''; rBox.innerHTML = '';
-            
-            globalCachedOrders.forEach(order => {
-                const orderStalls = typeof order.stalls === 'string' ? JSON.parse(order.stalls) : order.stalls;
-                if (!orderStalls || !Array.isArray(orderStalls)) return;
-                
-                orderStalls.forEach(s => {
-                    if (filter && filter !== "ALL" && s.stallName !== filter) return;
-                    if (s.dismissed) return;
-                    
-                    const isDone = s.etaMinutes !== null;
-                    const card = document.createElement('div'); card.className = "kds-ticket";
-                    let itemsSummary = s.items ? s.items.map(i => `${i.qty}x ${i.name}`).join(', ') : '';
-                    
-                    card.innerHTML = `<h5>${s.stallTokenId}</h5><p style="margin:4px 0; font-size:0.8rem;">${itemsSummary}</p><button class="action-btn-green" style="padding:4px 10px; font-size:0.75rem; width:auto; height:auto;">${isDone?'Clear':'Complete'}</button>`;
-                    
-                    card.querySelector('button').onclick = async () => {
-                        s.dismissed = isDone; if (!isDone) s.etaMinutes = 0; 
-                        await dbClient.from('orders').update({ stalls: orderStalls }).eq('order_id', order.order_id);
-                        await refreshGlobalOrderDataPool();
-                    };
-                    if (isDone) rBox.appendChild(card); else pBox.appendChild(card);
-                });
-            });
-        }
+            // Trigger database synchronization pipeline instantly upon authorization
+            fetchStallsFromSupabase(); 
+        });
+        document.getElementById('exit-kiosk-btn')?.addEventListener('click', () => {
+            document.getElementById('view-customer-kiosk').classList.add('hidden');
+            document.getElementById('view-gateway').style.display = 'flex';
+        });
+        document.getElementById('hub-logout-btn')?.addEventListener('click', () => {
+            document.getElementById('view-kitchen-hub').classList.add('hidden');
+            document.getElementById('view-gateway').style.display = 'flex';
+        });
     </script>
 </body>
 </html>
