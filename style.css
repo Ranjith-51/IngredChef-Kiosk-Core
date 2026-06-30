@@ -97,3 +97,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     #receipt-printable { position: absolute; top: 0; left: 0; width: 100%; box-shadow: none; }
     .no-print { display: none !important; }
 }
+
+.sales-panel{
+    background:#27ae60;
+    color:white;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.admin-sales-container{
+    margin-top:30px;
+}
