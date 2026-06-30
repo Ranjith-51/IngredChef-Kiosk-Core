@@ -14,7 +14,7 @@
                 <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" style="width: 100px; height: 100px; object-fit: contain;">
             </div>
             <h2>Welcome to IngredChef Hub</h2>
-            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace Interface</p>
+            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace</p>
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
@@ -564,11 +564,11 @@
                         return;
                     }
                     combinedResults = (data || []).map(item => ({
-                        idMeal: item.itemId,
+                        idMeal: item.itemid,
                         strMeal: item.name,
                         strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
                         customCost: item.price,
-                        customStall: item.stallName,
+                        customStall: item.stallname,
                         customAddons: item.addons || []
                     }));
                 } catch (e) {
@@ -946,7 +946,7 @@
         }
 
         // ==========================================
-        // 📊 NEW: LIVE REVENUE MATRIX COMPILATION ENGINE
+        // 📊 LIVE REVENUE MATRIX COMPILATION ENGINE
         // ==========================================
         function calculateLiveSalesMetrics() {
             const aggregateSales = {};
@@ -955,7 +955,6 @@
             });
 
             globalCachedOrders.forEach(order => {
-                // Sales logic only includes paid orders
                 if (order.paymentStatus !== 'paid') return;
                 
                 order.stalls.forEach(segment => {
@@ -967,7 +966,6 @@
                         segmentCostSum += (item.price || 0) * (item.qty || 1);
                     });
                     
-                    // Filter out reset milestones
                     const resetTimestamp = globalSalesResets[segment.stallName] || 0;
                     if (order.epochIssued > resetTimestamp) {
                         aggregateSales[segment.stallName] += segmentCostSum;
@@ -975,7 +973,6 @@
                 });
             });
 
-            // Update UI components contextually
             if (activeUserSession?.role === 'admin') {
                 const matrixBody = document.getElementById('admin-sales-matrix-body');
                 matrixBody.innerHTML = '';
@@ -1030,10 +1027,10 @@
         async function fetchDishesForStall(stallName) {
             if (isSupabaseConfigured) {
                 try {
-                    let { data } = await dbClient.from('dishes').select('*').eq('stallName', stallName);
+                    let { data } = await dbClient.from('dishes').select('*').eq('stallname', stallName);
                     if (data) {
                         renderStallSpecificInventoryTable(stallName, data.map(i => ({
-                            id: i.itemId, name: i.name, price: i.price, category: i.category, image: i.image, addons: i.addons
+                            id: i.itemid, name: i.name, price: i.price, category: i.category, image: i.image, addons: i.addons
                         })));
                     }
                 } catch(e){ console.log(e); }
@@ -1065,7 +1062,7 @@
                     if (!confirm(`Delete "${item.name}" from your catalog?`)) return;
                     if (isSupabaseConfigured) {
                         try {
-                            const { error } = await dbClient.from('dishes').delete().eq('itemId', item.id);
+                            const { error } = await dbClient.from('dishes').delete().eq('itemid', item.id);
                             if (error) { alert("Failed to delete dish: " + error.message); return; }
                         } catch (e) { alert("Failed to delete dish: " + e.message); return; }
                     }
@@ -1095,15 +1092,14 @@
                 if (aName) parsedAddons.push({ name: aName, price: aPrice });
             });
 
-            const itemId = editingDishId ? editingDishId : 'dish-' + Date.now();
-            const dishRecord = { itemId, stallName, name, price, category, image_url: imageUrl, addons: parsedAddons };
+            const itemid = editingDishId ? editingDishId : 'dish-' + Date.now();
+            const dishRecord = { itemid, stallname: stallName, name, price, category, image: imageUrl || null, addons: parsedAddons };
 
             if (isSupabaseConfigured) {
                 try {
-                    // Safe injection header parameter configurations prevent cache mismatch problems instantly
                     const options = { headers: { 'Accept-Profile': 'public' } };
                     const { error } = editingDishId 
-                        ? await dbClient.from('dishes').update(dishRecord, options).eq('itemId', editingDishId) 
+                        ? await dbClient.from('dishes').update(dishRecord, options).eq('itemid', editingDishId) 
                         : await dbClient.from('dishes').insert([dishRecord], options);
                     
                     if (error) {
@@ -1120,9 +1116,9 @@
                 if (!globalStallMenus[stallName]) globalStallMenus[stallName] = [];
                 if (editingDishId) {
                     const idx = globalStallMenus[stallName].findIndex(i => i.id === editingDishId);
-                    if (idx !== -1) globalStallMenus[stallName][idx] = { id: itemId, name, price, category, image: imageUrl, addons: parsedAddons };
+                    if (idx !== -1) globalStallMenus[stallName][idx] = { id: itemid, name, price, category, image: imageUrl, addons: parsedAddons };
                 } else {
-                    globalStallMenus[stallName].push({ id: itemId, name, price, category, image: imageUrl, addons: parsedAddons });
+                    globalStallMenus[stallName].push({ id: itemid, name, price, category, image: imageUrl, addons: parsedAddons });
                 }
                 localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
             }
@@ -1177,7 +1173,6 @@
             let pC = 0, rC = 0;
 
             globalCachedOrders.forEach(order => {
-                // Filter logs block layout so pending payment items are hidden from streams
                 if (order.paymentStatus !== 'paid') return;
 
                 order.stalls.forEach(s => {
