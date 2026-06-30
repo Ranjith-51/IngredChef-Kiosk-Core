@@ -458,7 +458,7 @@
 
                 const itemsHtml = data.stalls.map(s => `
                     <div style="margin-bottom:8px;">
-                        <strong style="font-size:0.85rem;">🏪 ${s.stallName}</strong>
+                        <strong style="font-size:0.85rem;">🏪 ${s.stallname}</strong>
                         <ul style="padding-left:15px; margin:3px 0; font-size:0.8rem;">${s.items.map(i => `<li>${i.qty}x ${i.name}</li>`).join('')}</ul>
                     </div>`).join('');
 
@@ -577,15 +577,15 @@
                     return;
                 }
             } else {
-                Object.keys(globalStallMenus).forEach(stallName => {
-                    globalStallMenus[stallName].forEach(item => {
+                Object.keys(globalStallMenus).forEach(stallname => {
+                    globalStallMenus[stallname].forEach(item => {
                         if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
                             combinedResults.push({
                                 idMeal: item.id,
                                 strMeal: item.name,
                                 strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
                                 customCost: item.price,
-                                customStall: stallName,
+                                customStall: stallname,
                                 customAddons: item.addons || []
                             });
                         }
@@ -662,9 +662,9 @@
 
                 const cartItem = {
                     id: 'item-' + Date.now() + '-' + Math.floor(Math.random()*1000),
-                    itemId: meal.idMeal,
+                    itemid: meal.idMeal,
                     name: meal.strMeal,
-                    stallName: meal.customStall,
+                    stallname: meal.customStall,
                     quantity: 1,
                     basePrice: meal.customCost,
                     unitPrice: meal.customCost + extraCost,
@@ -686,7 +686,7 @@
                 sum += c.unitPrice;
                 const div = document.createElement('div');
                 div.className = "basket-item-row";
-                div.innerHTML = `<div><strong>${c.name}</strong><br><small>${c.stallName}</small> ${c.customizations.length?`<br><small style="color:#e67e22;">➔ ${c.customizations.join(', ')}</small>`:''}</div> <div>₹${c.unitPrice} <button style="color:#e74c3c; background:none; border:none; font-weight:bold; cursor:pointer; margin-left:10px;">&times;</button></div>`;
+                div.innerHTML = `<div><strong>${c.name}</strong><br><small>${c.stallname}</small> ${c.customizations.length?`<br><small style="color:#e67e22;">➔ ${c.customizations.join(', ')}</small>`:''}</div> <div>₹${c.unitPrice} <button style="color:#e74c3c; background:none; border:none; font-weight:bold; cursor:pointer; margin-left:10px;">&times;</button></div>`;
                 div.querySelector('button').onclick = () => {
                     cart = cart.filter(i => i.id !== c.id);
                     renderBasketUI();
@@ -705,10 +705,10 @@
             let total = 0;
             cart.forEach(c => {
                 total += c.unitPrice;
-                if (!splitStalls[c.stallName]) splitStalls[c.stallName] = [];
-                splitStalls[c.stallName].push({ name: c.name, qty: c.quantity, customizations: c.customizations, price: c.unitPrice });
+                if (!splitStalls[c.stallname]) splitStalls[c.stallname] = [];
+                splitStalls[c.stallname].push({ name: c.name, qty: c.quantity, customizations: c.customizations, price: c.unitPrice });
             });
-            const segments = Object.keys(splitStalls).map(k => ({ stallName: k, items: splitStalls[k], etaMinutes: null, dismissed: false }));
+            const segments = Object.keys(splitStalls).map(k => ({ stallname: k, items: splitStalls[k], etaMinutes: null, dismissed: false }));
             const payload = { orderId, tokenNumber: token, customerName: activeCustomer.name, customerPhone: activeCustomer.phone, epochIssued: Date.now(), stalls: segments, grandTotal: total, paymentStatus: 'pending' };
 
             globalCachedOrders.unshift(payload);
@@ -783,7 +783,7 @@
                 <h5 style="margin:14px 0 6px 0;">Distribution Routings</h5>
                 ${order.stalls.map(s => `
                     <div style="margin-bottom:8px;">
-                        <strong style="font-size:0.85rem;">🏪 ${s.stallName}</strong>
+                        <strong style="font-size:0.85rem;">🏪 ${s.stallname}</strong>
                         <ul style="padding-left:15px; margin:3px 0; font-size:0.8rem;">
                             ${s.items.map(i => `<li>${i.qty}x ${i.name}</li>`).join('')}
                         </ul>
@@ -958,17 +958,17 @@
                 if (order.paymentStatus !== 'paid') return;
                 
                 order.stalls.forEach(segment => {
-                    if (aggregateSales[segment.stallName] === undefined) {
-                        aggregateSales[segment.stallName] = 0;
+                    if (aggregateSales[segment.stallname] === undefined) {
+                        aggregateSales[segment.stallname] = 0;
                     }
                     let segmentCostSum = 0;
                     segment.items.forEach(item => {
                         segmentCostSum += (item.price || 0) * (item.qty || 1);
                     });
                     
-                    const resetTimestamp = globalSalesResets[segment.stallName] || 0;
+                    const resetTimestamp = globalSalesResets[segment.stallname] || 0;
                     if (order.epochIssued > resetTimestamp) {
-                        aggregateSales[segment.stallName] += segmentCostSum;
+                        aggregateSales[segment.stallname] += segmentCostSum;
                     }
                 });
             });
@@ -1024,22 +1024,22 @@
             container.appendChild(div);
         }
 
-        async function fetchDishesForStall(stallName) {
+        async function fetchDishesForStall(stallname) {
             if (isSupabaseConfigured) {
                 try {
-                    let { data } = await dbClient.from('dishes').select('*').eq('stallname', stallName);
+                    let { data } = await dbClient.from('dishes').select('*').eq('stallname', stallname);
                     if (data) {
-                        renderStallSpecificInventoryTable(stallName, data.map(i => ({
+                        renderStallSpecificInventoryTable(stallname, data.map(i => ({
                             id: i.itemid, name: i.name, price: i.price, category: i.category, image: i.image, addons: i.addons
                         })));
                     }
                 } catch(e){ console.log(e); }
             } else {
-                renderStallSpecificInventoryTable(stallName, globalStallMenus[stallName] || []);
+                renderStallSpecificInventoryTable(stallname, globalStallMenus[stallname] || []);
             }
         }
 
-        function renderStallSpecificInventoryTable(stallName, itemsList) {
+        function renderStallSpecificInventoryTable(stallname, itemsList) {
             const tbody = document.getElementById('stall-menu-table-body');
             tbody.innerHTML = '';
             if (itemsList.length === 0) {
@@ -1066,10 +1066,10 @@
                             if (error) { alert("Failed to delete dish: " + error.message); return; }
                         } catch (e) { alert("Failed to delete dish: " + e.message); return; }
                     }
-                    globalStallMenus[stallName] = (globalStallMenus[stallName] || []).filter(i => i.id !== item.id);
+                    globalStallMenus[stallname] = (globalStallMenus[stallname] || []).filter(i => i.id !== item.id);
                     localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
                     if (editingDishId === item.id) exitDishEditMode();
-                    await fetchDishesForStall(stallName);
+                    await fetchDishesForStall(stallname);
                 };
                 tbody.appendChild(tr);
             });
@@ -1078,7 +1078,7 @@
         async function commitNewCustomMenuItemForm(e) {
             e.preventDefault();
             if (!activeUserSession || activeUserSession.role !== 'stall') return;
-            const stallName = activeUserSession.username;
+            const stallname = activeUserSession.username;
 
             const name = document.getElementById('food-name').value.trim();
             const price = parseFloat(document.getElementById('food-price').value);
@@ -1093,14 +1093,13 @@
             });
 
             const itemid = editingDishId ? editingDishId : 'dish-' + Date.now();
-            const dishRecord = { itemid, stallname: stallName, name, price, category, image: imageUrl || null, addons: parsedAddons };
+            const dishRecord = { itemid, stallname, name, price, category, image: imageUrl || null, addons: parsedAddons };
 
             if (isSupabaseConfigured) {
                 try {
-                    const options = { headers: { 'Accept-Profile': 'public' } };
                     const { error } = editingDishId 
-                        ? await dbClient.from('dishes').update(dishRecord, options).eq('itemid', editingDishId) 
-                        : await dbClient.from('dishes').insert([dishRecord], options);
+                        ? await dbClient.from('dishes').update(dishRecord).eq('itemid', editingDishId) 
+                        : await dbClient.from('dishes').insert([dishRecord]);
                     
                     if (error) {
                         alert("Failed to save dish to database: " + error.message);
@@ -1113,12 +1112,12 @@
                     return;
                 }
             } else {
-                if (!globalStallMenus[stallName]) globalStallMenus[stallName] = [];
+                if (!globalStallMenus[stallname]) globalStallMenus[stallname] = [];
                 if (editingDishId) {
-                    const idx = globalStallMenus[stallName].findIndex(i => i.id === editingDishId);
-                    if (idx !== -1) globalStallMenus[stallName][idx] = { id: itemid, name, price, category, image: imageUrl, addons: parsedAddons };
+                    const idx = globalStallMenus[stallname].findIndex(i => i.id === editingDishId);
+                    if (idx !== -1) globalStallMenus[stallname][idx] = { id: itemid, name, price, category, image: imageUrl, addons: parsedAddons };
                 } else {
-                    globalStallMenus[stallName].push({ id: itemid, name, price, category, image: imageUrl, addons: parsedAddons });
+                    globalStallMenus[stallname].push({ id: itemid, name, price, category, image: imageUrl, addons: parsedAddons });
                 }
                 localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
             }
@@ -1127,7 +1126,7 @@
             document.getElementById('menu-item-form').reset();
             document.getElementById('addons-container').innerHTML = '';
             document.getElementById('food-image-preview').src = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
-            await fetchDishesForStall(stallName);
+            await fetchDishesForStall(stallname);
         }
 
         function populateFormForEdit(item) {
@@ -1176,7 +1175,7 @@
                 if (order.paymentStatus !== 'paid') return;
 
                 order.stalls.forEach(s => {
-                    if (filter && filter !== s.stallName) return;
+                    if (filter && filter !== s.stallname) return;
                     if (s.dismissed) return;
 
                     const ticket = document.createElement('div');
@@ -1193,7 +1192,7 @@
                                 <span style="font-size:1.3rem; font-weight:900; color:#2c3e50;">#${order.tokenNumber}</span>
                                 <br><small style="color:#7f8c8d; font-weight:bold;">${order.orderId}</small>
                             </div>
-                            <span class="stall-tag" style="background:#34495e;">${s.stallName}</span>
+                            <span class="stall-tag" style="background:#34495e;">${s.stallname}</span>
                         </div>
                         <div style="font-size:0.85rem; color:#555; margin-bottom:8px;">🧑‍🤝‍🧑 ${order.customerName} (${order.customerPhone})</div>
                         <ul style="margin:0; padding-left:18px; font-size:0.9rem; flex:1;">${itemsListHtml}</ul>
@@ -1206,11 +1205,11 @@
 
                     if (!s.etaMinutes) {
                         pC++;
-                        ticket.querySelector('.action-ready').onclick = () => advanceTicketStateToReady(order.orderId, s.stallName);
+                        ticket.querySelector('.action-ready').onclick = () => advanceTicketStateToReady(order.orderId, s.stallname);
                         pBox.appendChild(ticket);
                     } else {
                         rC++;
-                        ticket.querySelector('.action-dismiss').onclick = () => finalizeDismissTicket(order.orderId, s.stallName);
+                        ticket.querySelector('.action-dismiss').onclick = () => finalizeDismissTicket(order.orderId, s.stallname);
                         rBox.appendChild(ticket);
                     }
                 });
@@ -1220,12 +1219,12 @@
             document.getElementById('count-ready').textContent = rC;
         }
 
-        async function advanceTicketStateToReady(orderId, stallName) {
+        async function advanceTicketStateToReady(orderId, stallname) {
             const orderIdx = globalCachedOrders.findIndex(o => o.orderId === orderId);
             if (orderIdx === -1) return;
             
             globalCachedOrders[orderIdx].stalls.forEach(s => {
-                if(s.stallName === stallName) s.etaMinutes = 5; 
+                if(s.stallname === stallname) s.etaMinutes = 5; 
             });
 
             localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
@@ -1237,12 +1236,12 @@
             renderKDSTicketsGrid();
         }
 
-        async function finalizeDismissTicket(orderId, stallName) {
+        async function finalizeDismissTicket(orderId, stallname) {
             const orderIdx = globalCachedOrders.findIndex(o => o.orderId === orderId);
             if (orderIdx === -1) return;
 
             globalCachedOrders[orderIdx].stalls.forEach(s => {
-                if(s.stallName === stallName) s.dismissed = true;
+                if(s.stallname === stallname) s.dismissed = true;
             });
 
             localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
@@ -1327,7 +1326,7 @@
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = "1px solid #e2e8f0";
                 
-                let targetStalls = o.stalls.map(s => s.stallName).join(', ');
+                let targetStalls = o.stalls.map(s => s.stallname).join(', ');
                 let paymentStatusBadge = o.paymentStatus === 'paid' 
                     ? `<span style="color:#2ecc71; font-weight:bold;">₹${o.grandTotal} (Paid)</span>` 
                     : (o.paymentStatus === 'cancelled' 
