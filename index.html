@@ -9,12 +9,16 @@
 </head>
 <body>
 
+    <!-- 🚪 CENTRAL GATEWAY SCREEN -->
     <div id="view-gateway" class="gateway-screen">
         <div class="gateway-card">
-            <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" style="width: 140px; height: auto; display: block; margin: 0 auto 15px auto;">
-            <div style="width:140px; height:140px; border-radius:50%; margin:0 auto 15px auto; background:#34495e; display:flex; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold;">👨‍🍳</div>
+            <!-- Fixed Layout: Logo integrated directly inside the circular boundary wrapper -->
+            <div style="width: 150px; height: 150px; border-radius: 50%; margin: 0 auto 20px auto; background: #ffffff; border: 4px solid #34495e; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" style="width: 85%; height: 85%; object-fit: contain; display: block;">
+            </div>
+            
             <h2>Welcome to IngredChef Hub</h2>
-            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace Interface</p>
+            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Workspace</p>
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
