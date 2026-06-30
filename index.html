@@ -171,7 +171,12 @@
                         <button type="button" id="add-addon-row-btn" style="background:none; border:none; color:#3498db; font-weight:bold; cursor:pointer; font-size:0.85rem; margin-top:8px; padding:0;">+ Append Custom Variant Modification Option</button>
                     </div>
 
-                    <button type="submit" class="action-btn-green" style="margin:0; width:auto; padding:10px 25px;">Push Item to Active Catalog</button>
+                    <p id="edit-mode-banner" class="hidden" style="background:#fff2e6; color:#e67e22; padding:8px 12px; border-radius:6px; font-size:0.8rem; font-weight:bold; margin:0 0 12px 0;">✏️ Editing existing item — submitting will update it instead of creating a new one.</p>
+
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="submit" id="menu-form-submit-btn" class="action-btn-green" style="margin:0; width:auto; padding:10px 25px;">Push Item to Active Catalog</button>
+                        <button type="button" id="cancel-edit-btn" class="hidden" style="background:#bdc3c7; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">Cancel Edit</button>
+                    </div>
                 </form>
 
                 <div style="margin-top:20px;">
@@ -266,10 +271,45 @@
     </div>
 
     <div id="invoice-modal" class="modal-backdrop hidden">
-        <div class="modal-card" style="max-width:420px; padding:30px;">
-            <button id="close-invoice-btn" class="modal-close-x">&times;</button>
+        <div class="modal-card" id="receipt-printable" style="max-width:420px; padding:30px;">
+            <button id="close-invoice-btn" class="modal-close-x no-print">&times;</button>
             <div id="invoice-body"></div>
+            <div class="no-print" style="display:flex; gap:10px; margin-top:20px;">
+                <button id="print-receipt-btn" style="flex:1; background:#34495e; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">🖨️ Print Bill</button>
+                <button id="close-receipt-action-btn" style="flex:1; background:#2ecc71; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">Close</button>
+            </div>
         </div>
+    </div>
+
+    <!-- 💳 QR PAYMENT MODAL -->
+    <div id="qr-payment-modal" class="modal-backdrop hidden">
+        <div class="modal-card" style="max-width:380px; padding:30px; text-align:center;">
+            <h3 style="margin-top:0; color:#2c3e50;">📲 Scan to Pay</h3>
+            <p style="font-size:0.85rem; color:#7f8c8d; margin-bottom:15px;">Scan this QR code on your mobile to confirm and finalize your order payment.</p>
+            <img id="qr-payment-image" src="" alt="Payment QR Code" style="width:220px; height:220px; border:6px solid #f1f5f9; border-radius:12px;">
+            <p id="qr-payment-amount" style="font-size:1.3rem; font-weight:900; color:#2ecc71; margin:15px 0 5px 0;"></p>
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px; color:#e67e22; font-weight:bold; font-size:0.85rem; margin:10px 0;">
+                <span class="qr-spinner"></span> Waiting for payment confirmation...
+            </div>
+            <button id="cancel-qr-payment-btn" style="background:#e74c3c; color:white; border:none; width:100%; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px;">Cancel Payment</button>
+        </div>
+    </div>
+
+    <!-- 🙏 THANK YOU OVERLAY -->
+    <div id="thank-you-overlay" class="modal-backdrop hidden" style="z-index:10001;">
+        <div class="modal-card" style="max-width:380px; padding:40px; text-align:center;">
+            <div style="font-size:3.5rem;">🙏</div>
+            <h2 style="color:#2ecc71; margin:10px 0 5px 0;">Thank You!</h2>
+            <p style="color:#7f8c8d;">Your order has been placed successfully. Enjoy your meal!</p>
+        </div>
+    </div>
+
+    <!-- 📱 MOBILE PAYMENT CONFIRMATION PAGE (opened via QR scan, ?pay=ORDERID) -->
+    <div id="view-pay-page" class="gateway-screen hidden">
+        <div class="gateway-card" id="pay-page-card" style="text-align:left;">
+            <div id="pay-page-body">Loading order details...</div>
+        </div>
+    </div>
     </div>
 
     <!-- AUTOMATION SDK IMPLEMENTATIONS -->
@@ -299,6 +339,8 @@
         let cart = [];
         let activeCustomer = null;
         let foodCourtStalls = [];
+        let editingDishId = null;       // tracks dish currently being edited (null = create mode)
+        let pendingPaymentOrder = null; // order awaiting QR payment confirmation
         
         // Load data or fall back to synchronized local arrays across components
         let globalCachedOrders = JSON.parse(localStorage.getItem('globalCachedOrders')) || [];
@@ -306,6 +348,16 @@
         let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // 📱 MOBILE PAYMENT LINK ROUTING — if this page was opened via a QR scan
+            // (URL contains ?pay=ORDERID), show only the payment confirmation page.
+            const payOrderId = new URLSearchParams(location.search).get('pay');
+            if (payOrderId) {
+                document.getElementById('view-gateway').classList.add('hidden');
+                document.getElementById('view-pay-page').classList.remove('hidden');
+                await renderMobilePayPage(payOrderId);
+                return;
+            }
+
             // SPA View Router Controls
             document.getElementById('gate-to-customer-btn').addEventListener('click', launchCustomerWorkspaceView);
             document.getElementById('gate-to-kitchen-btn').addEventListener('click', () => document.getElementById('kds-auth-screen').classList.remove('hidden'));
@@ -325,7 +377,10 @@
             
             // Close overlays bindings
             document.getElementById('close-modal-btn').addEventListener('click', () => document.getElementById('recipe-modal').classList.add('hidden'));
-            document.getElementById('close-invoice-btn').addEventListener('click', () => document.getElementById('invoice-modal').classList.add('hidden'));
+            document.getElementById('close-invoice-btn').addEventListener('click', handleReceiptClosed);
+            document.getElementById('close-receipt-action-btn').addEventListener('click', handleReceiptClosed);
+            document.getElementById('print-receipt-btn').addEventListener('click', () => window.print());
+            document.getElementById('cancel-qr-payment-btn').addEventListener('click', cancelPendingPayment);
 
             // Kitchen Core Event Links
             document.getElementById('hub-logout-btn').addEventListener('click', terminateKitchenHubSession);
@@ -334,6 +389,7 @@
             document.getElementById('stall-selector').addEventListener('change', () => renderKDSTicketsGrid());
             document.getElementById('add-addon-row-btn').addEventListener('click', addNewAddonInputRow);
             document.getElementById('menu-item-form').addEventListener('submit', commitNewCustomMenuItemForm);
+            document.getElementById('cancel-edit-btn').addEventListener('click', exitDishEditMode);
             document.getElementById('food-image-url').addEventListener('input', () => {
                 const url = document.getElementById('food-image-url').value.trim();
                 document.getElementById('food-image-preview').src = url || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
@@ -370,6 +426,70 @@
             }
         });
 
+        // ==========================================
+        // 📱 MOBILE PAYMENT CONFIRMATION PAGE (QR scan target)
+        // ==========================================
+        async function renderMobilePayPage(orderId) {
+            const body = document.getElementById('pay-page-body');
+            if (!isSupabaseConfigured) {
+                body.innerHTML = `<p style="text-align:center; color:#e74c3c; font-weight:bold;">Payment confirmation requires an active database connection. Please contact the kiosk staff.</p>`;
+                return;
+            }
+            try {
+                const { data, error } = await dbClient.from('orders').select('*').eq('orderId', orderId).single();
+                if (error || !data) {
+                    body.innerHTML = `<p style="text-align:center; color:#e74c3c; font-weight:bold;">Order not found. The link may have expired.</p>`;
+                    return;
+                }
+                if (data.paymentStatus === 'paid') {
+                    body.innerHTML = `<div style="text-align:center;"><div style="font-size:3rem;">✅</div><h3 style="color:#2ecc71;">Already Confirmed</h3><p style="color:#7f8c8d;">This order's payment was already finalized. You may close this page.</p></div>`;
+                    return;
+                }
+                if (data.paymentStatus === 'cancelled') {
+                    body.innerHTML = `<div style="text-align:center;"><div style="font-size:3rem;">❌</div><h3 style="color:#e74c3c;">Payment Cancelled</h3><p style="color:#7f8c8d;">This order was cancelled. You may close this page.</p></div>`;
+                    return;
+                }
+
+                const itemsHtml = data.stalls.map(s => `
+                    <div style="margin-bottom:8px;">
+                        <strong style="font-size:0.85rem;">🏪 ${s.stallName}</strong>
+                        <ul style="padding-left:15px; margin:3px 0; font-size:0.8rem;">${s.items.map(i => `<li>${i.qty}x ${i.name}</li>`).join('')}</ul>
+                    </div>`).join('');
+
+                body.innerHTML = `
+                    <h3 style="margin-top:0; color:#2c3e50; text-align:center;">💳 Confirm Your Payment</h3>
+                    <p style="text-align:center; color:#7f8c8d; font-size:0.85rem;">Order <strong>${data.orderId}</strong> • Token #${data.tokenNumber}</p>
+                    <div style="background:#f8fafc; border-radius:8px; padding:12px; margin:15px 0;">${itemsHtml}</div>
+                    <h2 style="text-align:center; color:#2ecc71; margin:10px 0 20px 0;">₹${data.grandTotal}</h2>
+                    <button id="pay-finalize-btn" class="action-btn-green" style="width:100%;">✅ Finalize Order</button>
+                    <button id="pay-cancel-btn" style="background:#e74c3c; color:white; border:none; width:100%; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px;">❌ Cancel</button>
+                `;
+
+                document.getElementById('pay-finalize-btn').addEventListener('click', () => updateMobilePaymentStatus(orderId, 'paid'));
+                document.getElementById('pay-cancel-btn').addEventListener('click', () => updateMobilePaymentStatus(orderId, 'cancelled'));
+            } catch (e) {
+                body.innerHTML = `<p style="text-align:center; color:#e74c3c; font-weight:bold;">Something went wrong loading this order.</p>`;
+                console.error(e);
+            }
+        }
+
+        async function updateMobilePaymentStatus(orderId, status) {
+            const body = document.getElementById('pay-page-body');
+            try {
+                const { error } = await dbClient.from('orders').update({ paymentStatus: status }).eq('orderId', orderId);
+                if (error) { alert("Failed to update payment status: " + error.message); return; }
+
+                if (status === 'paid') {
+                    body.innerHTML = `<div style="text-align:center;"><div style="font-size:3rem;">✅</div><h3 style="color:#2ecc71;">Payment Confirmed!</h3><p style="color:#7f8c8d;">You may now close this page and collect your order from the kiosk.</p></div>`;
+                } else {
+                    body.innerHTML = `<div style="text-align:center;"><div style="font-size:3rem;">❌</div><h3 style="color:#e74c3c;">Order Cancelled</h3><p style="color:#7f8c8d;">You may close this page.</p></div>`;
+                }
+            } catch (e) {
+                alert("Failed to update payment status.");
+                console.error(e);
+            }
+        }
+
         function returnToMainGateway() {
             document.getElementById('view-customer-kiosk').classList.add('hidden');
             document.getElementById('view-kitchen-hub').classList.add('hidden');
@@ -394,6 +514,7 @@
                     if (payload.eventType === 'UPDATE') {
                         const idx = globalCachedOrders.findIndex(o => o.orderId === payload.new.orderId);
                         if (idx !== -1) globalCachedOrders[idx] = payload.new;
+                        handlePendingPaymentStatusChange(payload.new);
                     }
                     localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
                     updateHistoryDashboardUI();
@@ -422,57 +543,53 @@
             const term = document.getElementById('food-search-input').value.trim();
             if (!term) return;
             const msg = document.getElementById('status-message');
-            msg.textContent = `🔍 Querying items catalog matching "${term}"...`;
-            
+            msg.textContent = `\ud83d\udd0d Querying registered outlets catalog matching "${term}"...`;
+
             let combinedResults = [];
 
-            // 1. Gather custom local stall products
-            Object.keys(globalStallMenus).forEach(stallName => {
-                globalStallMenus[stallName].forEach(item => {
-                    if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
-                        combinedResults.push({
-                            isCustom: true,
-                            idMeal: item.id,
-                            strMeal: item.name,
-                            strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
-                            customCost: item.price,
-                            customStall: stallName,
-                            customAddons: item.addons || []
-                        });
+            if (isSupabaseConfigured) {
+                try {
+                    const { data, error } = await dbClient
+                        .from('dishes')
+                        .select('*')
+                        .or(`name.ilike.%${term}%,category.ilike.%${term}%`);
+                    if (error) {
+                        console.error("Supabase dish search error:", error.message);
+                        msg.textContent = "\u274c Could not reach the catalog database.";
+                        return;
                     }
-                });
-            });
-
-            // 2. Load Fallback public recipes
-            try {
-                let res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(term)}`);
-                let data = await res.json();
-                if (!data.meals) {
-                    res = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(term)}`);
-                    data = await res.json();
+                    combinedResults = (data || []).map(item => ({
+                        idMeal: item.itemId,
+                        strMeal: item.name,
+                        strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
+                        customCost: item.price,
+                        customStall: item.stallName,
+                        customAddons: item.addons || []
+                    }));
+                } catch (e) {
+                    console.error("Supabase dish search exception:", e);
+                    msg.textContent = "\u274c Could not reach the catalog database.";
+                    return;
                 }
-                if (data.meals) {
-                    data.meals.forEach((meal, i) => {
-                        const cost = Math.max(120, Math.min(((parseInt(meal.idMeal || "52771") % 300) + 140), 650));
-                        const stall = foodCourtStalls[Math.abs(meal.strMeal.charCodeAt(0) + i) % foodCourtStalls.length] || "Global Counter";
-                        combinedResults.push({
-                            isCustom: false,
-                            idMeal: meal.idMeal,
-                            strMeal: meal.strMeal,
-                            strMealThumb: meal.strMealThumb,
-                            customCost: cost,
-                            customStall: stall,
-                            customAddons: [
-                                { name: "Layered Cheddar Cheese", price: "40" },
-                                { name: "Jumbo Upgrade Pack", price: "60" }
-                            ]
-                        });
+            } else {
+                Object.keys(globalStallMenus).forEach(stallName => {
+                    globalStallMenus[stallName].forEach(item => {
+                        if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
+                            combinedResults.push({
+                                idMeal: item.id,
+                                strMeal: item.name,
+                                strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
+                                customCost: item.price,
+                                customStall: stallName,
+                                customAddons: item.addons || []
+                            });
+                        }
                     });
-                }
-            } catch { console.warn("External dictionary offline."); }
+                });
+            }
 
-            if (combinedResults.length === 0) return msg.textContent = "❌ Zero matches located. Try alternative categories.";
-            msg.textContent = `🍟 Loaded ${combinedResults.length} listings for "${term}":`;
+            if (combinedResults.length === 0) return msg.textContent = "\u274c No registered outlet items match that search yet.";
+            msg.textContent = `\ud83c\udf5f Loaded ${combinedResults.length} listings for "${term}":`;
             displayMealCardsUI(combinedResults);
         }
 
@@ -573,7 +690,7 @@
             });
 
             const segments = Object.keys(splitStalls).map(k => ({ stallName: k, items: splitStalls[k], etaMinutes: null, dismissed: false }));
-            const payload = { orderId, tokenNumber: token, customerName: activeCustomer.name, customerPhone: activeCustomer.phone, epochIssued: Date.now(), stalls: segments, grandTotal: total };
+            const payload = { orderId, tokenNumber: token, customerName: activeCustomer.name, customerPhone: activeCustomer.phone, epochIssued: Date.now(), stalls: segments, grandTotal: total, paymentStatus: 'pending' };
 
             // Core State Array Injection Logic
             globalCachedOrders.unshift(payload);
@@ -582,27 +699,95 @@
             if (isSupabaseConfigured) {
                 try {
                     const { error } = await dbClient.from('orders').insert([payload]);
-                    if (error) console.error("Supabase order insert error:", error.message);
+                    if (error) {
+                        console.error("Supabase order insert error:", error.message);
+                        alert("Failed to place order: " + error.message);
+                        return;
+                    }
                 } catch (err) {
                     console.error("Supabase order insert exception:", err);
+                    alert("Failed to place order: " + err.message);
+                    return;
                 }
             }
 
             // Sync the local state instantly to layout views
             updateHistoryDashboardUI();
-            triggerReceiptUI(payload); 
-            cart = []; 
+            cart = [];
             renderBasketUI();
+            showPaymentQRModal(payload);
+        }
+
+        function showPaymentQRModal(order) {
+            pendingPaymentOrder = order;
+            const payUrl = `${location.origin}${location.pathname}?pay=${encodeURIComponent(order.orderId)}`;
+            const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(payUrl)}`;
+            document.getElementById('qr-payment-image').src = qrSrc;
+            document.getElementById('qr-payment-amount').textContent = `₹${order.grandTotal} • Token #${order.tokenNumber}`;
+            document.getElementById('qr-payment-modal').classList.remove('hidden');
+        }
+
+        async function cancelPendingPayment() {
+            if (!pendingPaymentOrder) return;
+            const order = pendingPaymentOrder;
+            document.getElementById('qr-payment-modal').classList.add('hidden');
+            pendingPaymentOrder = null;
+
+            if (isSupabaseConfigured) {
+                try { await dbClient.from('orders').update({ paymentStatus: 'cancelled' }).eq('orderId', order.orderId); } catch(e) { console.error(e); }
+            }
+        }
+
+        // Called from the realtime order subscription when a payment status flips to 'paid'/'cancelled'
+        function handlePendingPaymentStatusChange(updatedOrder) {
+            if (!pendingPaymentOrder || updatedOrder.orderId !== pendingPaymentOrder.orderId) return;
+
+            if (updatedOrder.paymentStatus === 'paid') {
+                document.getElementById('qr-payment-modal').classList.add('hidden');
+                pendingPaymentOrder = null;
+                triggerReceiptUI(updatedOrder);
+            } else if (updatedOrder.paymentStatus === 'cancelled') {
+                document.getElementById('qr-payment-modal').classList.add('hidden');
+                pendingPaymentOrder = null;
+                alert("Payment was cancelled from the mobile confirmation page.");
+            }
         }
 
         function triggerReceiptUI(order) {
             const body = document.getElementById('invoice-body');
-            body.innerHTML = `<div style="text-align:center;"><h1 style="color:#2ecc71; margin:0; font-size:2.8rem;"># ${order.tokenNumber}</h1><p style="color:#7f8c8d; font-size:0.8rem; margin-top:0;">ORDER DISPATCH QUEUE TOKEN</p></div>
-                             <p style="font-size:0.85rem;"><strong>ID:</strong> ${order.orderId}<br><strong>Client:</strong> ${order.customerName}</p>
-                             <h5 style="margin:10px 0 5px 0;">Distribution Routings:</h5>
-                             <ul style="padding-left:15px; margin:0; font-size:0.8rem;">${order.stalls.map(s => `<li><strong>${s.stallName}</strong> (${s.items.length} items)</li>`).join('')}</ul>
-                             <h3 style="text-align:right; margin:15px 0 0 0;">Charged: ₹${order.grandTotal}</h3>`;
+            body.innerHTML = `
+                <div class="receipt-header">
+                    <h1 style="color:#2ecc71; margin:0; font-size:2.8rem;"># ${order.tokenNumber}</h1>
+                    <p style="color:#7f8c8d; font-size:0.8rem; margin:2px 0 0 0;">ORDER DISPATCH QUEUE TOKEN</p>
+                    <span class="paid-stamp">✓ PAYMENT SUCCESSFUL</span>
+                </div>
+                <div class="receipt-row"><span>Order ID</span><span><strong>${order.orderId}</strong></span></div>
+                <div class="receipt-row"><span>Customer</span><span><strong>${order.customerName}</strong></span></div>
+                <div class="receipt-row"><span>Date/Time</span><span>${new Date(order.epochIssued).toLocaleString()}</span></div>
+                <h5 style="margin:14px 0 6px 0;">Distribution Routings</h5>
+                ${order.stalls.map(s => `
+                    <div style="margin-bottom:8px;">
+                        <strong style="font-size:0.85rem;">🏪 ${s.stallName}</strong>
+                        <ul style="padding-left:15px; margin:3px 0; font-size:0.8rem;">
+                            ${s.items.map(i => `<li>${i.qty}x ${i.name}</li>`).join('')}
+                        </ul>
+                    </div>`).join('')}
+                <div class="receipt-total-row"><span>Total Charged</span><span>₹${order.grandTotal}</span></div>
+            `;
             document.getElementById('invoice-modal').classList.remove('hidden');
+        }
+
+        function handleReceiptClosed() {
+            document.getElementById('invoice-modal').classList.add('hidden');
+            document.getElementById('thank-you-overlay').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('thank-you-overlay').classList.add('hidden');
+                resetKioskTerminalState();
+                document.getElementById('recipe-grid').innerHTML = '';
+                document.getElementById('status-message').textContent = '🥣 Select a category or search to load delicacies!';
+                document.querySelectorAll('.category-card').forEach(b => b.classList.remove('active'));
+                updateHistoryDashboardUI();
+            }, 2200);
         }
 
         function updateHistoryDashboardUI() {
@@ -732,7 +917,7 @@
                 currentStallText.innerHTML = `Connected Node Workspace: <strong>${activeUserSession.username}</strong>`;
                 document.getElementById('stall-selector').value = activeUserSession.username;
                 document.getElementById('stall-selector').disabled = true;
-                renderStallSpecificInventoryTable(activeUserSession.username);
+                fetchDishesForStall(activeUserSession.username);
             }
             renderKDSTicketsGrid();
         }
@@ -754,7 +939,7 @@
             container.appendChild(div);
         }
 
-        function commitNewCustomMenuItemForm(e) {
+        async function commitNewCustomMenuItemForm(e) {
             e.preventDefault();
             if (!activeUserSession || activeUserSession.role !== 'stall') return;
 
@@ -775,25 +960,92 @@
                 }
             });
 
-            if (!globalStallMenus[activeUserSession.username]) {
-                globalStallMenus[activeUserSession.username] = [];
+            const stallName = activeUserSession.username;
+            const itemId = editingDishId || ('custom-item-' + Date.now());
+            const dishRecord = { itemId, stallName, name, price, category, image: imageUrl, addons: parsedAddons };
+
+            if (isSupabaseConfigured) {
+                try {
+                    const { error } = editingDishId
+                        ? await dbClient.from('dishes').update(dishRecord).eq('itemId', editingDishId)
+                        : await dbClient.from('dishes').insert([dishRecord]);
+                    if (error) {
+                        alert("Failed to save dish to database: " + error.message);
+                        console.error("Supabase dish save error:", error);
+                        return;
+                    }
+                } catch (err) {
+                    alert("Failed to save dish to database: " + err.message);
+                    console.error("Supabase dish save exception:", err);
+                    return;
+                }
+            } else {
+                if (!globalStallMenus[stallName]) globalStallMenus[stallName] = [];
+                if (editingDishId) {
+                    const idx = globalStallMenus[stallName].findIndex(i => i.id === editingDishId);
+                    if (idx !== -1) globalStallMenus[stallName][idx] = { id: itemId, name, price, category, image: imageUrl, addons: parsedAddons };
+                } else {
+                    globalStallMenus[stallName].push({ id: itemId, name, price, category, image: imageUrl, addons: parsedAddons });
+                }
+                localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
             }
 
-            globalStallMenus[activeUserSession.username].push({
-                id: 'custom-item-' + Date.now(),
-                name,
-                price,
-                category,
-                image: imageUrl,
-                addons: parsedAddons
-            });
-
-            localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
-            
+            exitDishEditMode();
             document.getElementById('menu-item-form').reset();
             document.getElementById('addons-container').innerHTML = '';
             document.getElementById('food-image-preview').src = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
-            renderStallSpecificInventoryTable(activeUserSession.username);
+            await fetchDishesForStall(stallName);
+        }
+
+        function populateFormForEdit(item) {
+            editingDishId = item.id;
+            document.getElementById('food-name').value = item.name;
+            document.getElementById('food-price').value = item.price;
+            document.getElementById('food-category').value = item.category;
+            document.getElementById('food-image-url').value = item.image || '';
+            document.getElementById('food-image-preview').src = item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
+
+            const container = document.getElementById('addons-container');
+            container.innerHTML = '';
+            (item.addons || []).forEach(a => {
+                addNewAddonInputRow();
+                const rows = container.children;
+                const lastRow = rows[rows.length - 1];
+                lastRow.querySelector('.addon-name-input').value = a.name;
+                lastRow.querySelector('.addon-price-input').value = a.price;
+            });
+
+            document.getElementById('edit-mode-banner').classList.remove('hidden');
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            document.getElementById('menu-form-submit-btn').textContent = 'Update Item in Catalog';
+            document.getElementById('menu-item-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function exitDishEditMode() {
+            editingDishId = null;
+            document.getElementById('edit-mode-banner').classList.add('hidden');
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            document.getElementById('menu-form-submit-btn').textContent = 'Push Item to Active Catalog';
+            document.getElementById('menu-item-form').reset();
+            document.getElementById('addons-container').innerHTML = '';
+            document.getElementById('food-image-preview').src = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
+        }
+
+        async function fetchDishesForStall(stallName) {
+            if (isSupabaseConfigured) {
+                try {
+                    const { data, error } = await dbClient.from('dishes').select('*').eq('stallName', stallName);
+                    if (error) {
+                        console.error("Supabase dish fetch error:", error.message);
+                    } else {
+                        globalStallMenus[stallName] = (data || []).map(d => ({ id: d.itemId, name: d.name, price: d.price, category: d.category, image: d.image, addons: d.addons || [] }));
+                        localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
+                    }
+                } catch (e) {
+                    console.error("Supabase dish fetch exception:", e);
+                }
+            }
+            renderStallSpecificInventoryTable(stallName);
         }
 
         function renderStallSpecificInventoryTable(stallName) {
@@ -817,11 +1069,20 @@
                     <td style="padding:8px; border:1px solid #ddd;"><span class="stall-tag" style="background:#34495e;">${item.category}</span></td>
                     <td style="padding:8px; border:1px solid #ddd; font-weight:bold; color:#e74c3c;">₹${item.price}</td>
                     <td style="padding:8px; border:1px solid #ddd;">${addonsChips || '<small style="color:#aaa;">Standard base spec</small>'}</td>
-                    <td style="padding:8px; border:1px solid #ddd; text-align:center;"><button class="vendor-del-btn" style="padding:2px 8px;">Delete</button></td>
+                    <td style="padding:8px; border:1px solid #ddd; text-align:center; white-space:nowrap;"><button class="edit-item-btn">Edit</button><button class="vendor-del-btn">Delete</button></td>
                 `;
-                tr.querySelector('.vendor-del-btn').onclick = () => {
+                tr.querySelector('.edit-item-btn').onclick = () => populateFormForEdit(item);
+                tr.querySelector('.vendor-del-btn').onclick = async () => {
+                    if (!confirm(`Delete "${item.name}" from your catalog?`)) return;
+                    if (isSupabaseConfigured) {
+                        try {
+                            const { error } = await dbClient.from('dishes').delete().eq('itemId', item.id);
+                            if (error) { alert("Failed to delete dish: " + error.message); return; }
+                        } catch (e) { alert("Failed to delete dish: " + e.message); return; }
+                    }
                     globalStallMenus[stallName] = globalStallMenus[stallName].filter(i => i.id !== item.id);
                     localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
+                    if (editingDishId === item.id) exitDishEditMode();
                     renderStallSpecificInventoryTable(stallName);
                 };
                 tbody.appendChild(tr);
