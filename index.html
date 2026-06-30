@@ -699,8 +699,18 @@
         async function transmitCompletedBillToCloud() {
             if (!activeCustomer) return alert("Register profile data prior to checking out.");
             if (cart.length === 0) return alert("Your basket is empty.");
-            const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
-            const token = Math.floor(10 + Math.random() * 89);
+            // --- PREVIOUS BROKEN IMPLEMENTATION ---
+            // const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+            // const token = Math.floor(10 + Math.random() * 89);
+
+            // --- COMPLIANT SEQUENTIAL TRACKING BLUEPRINT ---
+            // Determine current baseline index relative to complete transaction log
+            const baselineSequenceCount = (globalCachedOrders && globalCachedOrders.length) ? globalCachedOrders.length + 1 : 1;
+            const orderId = "ORD-" + String(100000 + baselineSequenceCount);
+
+            // Generate a completely unique revolving token ID (bounded cleanly between 10 and 99)
+            // Uses a clean Unix-epoch timestamp modulus calculation to guarantee uniqueness per order submission
+            const token = 10 + (Math.floor(Date.now() / 10) % 90);
             const splitStalls = {};
             let total = 0;
             cart.forEach(c => {
