@@ -9,14 +9,11 @@
 </head>
 <body>
 
-    <!-- 🚪 CENTRAL GATEWAY SCREEN -->
     <div id="view-gateway" class="gateway-screen">
         <div class="gateway-card">
-            <!-- Fixed Layout: Logo integrated directly inside the circular boundary wrapper -->
             <div style="width: 150px; height: 150px; border-radius: 50%; margin: 0 auto 20px auto; background: #ffffff; border: 4px solid #34495e; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
                 <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" style="width: 85%; height: 85%; object-fit: contain; display: block;">
             </div>
-            
             <h2>Welcome to IngredChef Hub</h2>
             <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Workspace</p>
             
@@ -411,7 +408,7 @@
             
             let combinedResults = [];
 
-            // Gather production system data directly out of PostgreSQL dishes table
+            // Gather data out of PostgreSQL dishes table
             if (isSupabaseConfigured) {
                 try {
                     let { data } = await dbClient.from('dishes').select('*');
@@ -425,7 +422,7 @@
                                     strMealThumb: item.image_url || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
                                     customCost: parseFloat(item.price),
                                     customStall: item.stall_prefix || "GLOBAL",
-                                    customAddons: []
+                                    customAddons: item.addons || []
                                 });
                             }
                         });
@@ -545,7 +542,6 @@
             document.getElementById('cart-grand-total').textContent = `₹${sum}`;
         }
 
-        // --- STEP 1: INITIALIZE CHECKOUT & DISPLAY PAYMENT GENERATION MODE ---
         function initCheckoutPaymentSequence() {
             if (!activeCustomer) return alert("Register your profile data prior to checking out.");
             if (cart.length === 0) return alert("Your basket is empty.");
@@ -565,7 +561,6 @@
                 };
             });
 
-            // Cache payload array mapping to complete transaction later
             currentStagingPayload = {
                 order_ref: orderRefCode,
                 token_number: generatedToken,
@@ -576,7 +571,6 @@
                 order_status: 'COOKING'
             };
 
-            // Generate External Payments Simulator Engine Link
             const simulatedWebGatewayUrl = `https://ingredchef-payments.vercel.app/pay?ref=${orderRefCode}&amt=${total}`;
             
             const qrContainer = document.getElementById('qr-code-payload-render');
@@ -592,7 +586,6 @@
             document.getElementById('payment-gateway-overlay').classList.remove('hidden');
         }
 
-        // --- STEP 2: FINALIZE REMOTE RESPONSE LOGIC AND POST CLOUD WRITES ---
         async function processRemotePaymentSuccessLoop() {
             if (!currentStagingPayload) return;
             
@@ -637,7 +630,7 @@
 
             body.innerHTML = `
                 <div style="text-align:center; border-bottom:2px dashed #cbd5e1; padding-bottom:15px; margin-bottom:15px;">
-                    <h2 style="margin:0; color:#2cc71;">🎉 PAYMENT SUCCESS</h2>
+                    <h2 style="margin:0; color:#2ecc71;">🎉 PAYMENT SUCCESS</h2>
                     <p style="margin:5px 0 0 0; color:#7f8c8d; font-size:0.85rem;">Thank you for your order!</p>
                     <h1 style="font-size:4rem; margin:10px 0; color:#2c3e50; letter-spacing:2px;">#${order.token_number}</h1>
                     <span style="font-size:0.75rem; background:#f1f5f9; padding:4px 10px; border-radius:12px; font-weight:bold; color:#475569;">KITCHEN DISPATCH TOKEN</span>
@@ -662,7 +655,6 @@
         function resetKioskTerminalStateAndClose() {
             document.getElementById('invoice-modal').classList.add('hidden');
             resetKioskTerminalState();
-            // Automatically refetch to verify active view arrays mapping
             launchCustomerWorkspaceView();
         }
 
@@ -807,19 +799,38 @@
             const price = parseFloat(document.getElementById('food-price').value.trim());
             const category = document.getElementById('food-category').value;
 
+            // Collect dynamic add-on modifications from the container rows
+            const addonsArray = [];
+            const addonRows = document.getElementById('addons-container').children;
+            for (let row of addonRows) {
+                const nameInput = row.querySelector('.addon-name-input');
+                const priceInput = row.querySelector('.addon-price-input');
+                if (nameInput && priceInput && nameInput.value.trim()) {
+                    addonsArray.push({
+                        name: nameInput.value.trim(),
+                        price: priceInput.value.trim()
+                    });
+                }
+            }
+
             if (isSupabaseConfigured) {
                 try {
-                    const { error } = await dbClient.from('dishes').insert([{
+                    const payload = {
                         name: name,
                         price: price,
                         category: category,
                         stall_prefix: activeUserSession.prefix,
-                        image_url: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300"
-                    }]);
+                        image_url: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
+                        addons: addonsArray
+                    };
+
+                    const { error } = await dbClient.from('dishes').insert([payload]);
                     if (error) throw error;
-                    alert("Delicacy Synchronized into Live Web Database successfully.");
+                    
+                    alert("🎉 Delicacy Synchronized into Live Web Database successfully.");
+                    document.getElementById('addons-container').innerHTML = ''; // Clear dynamic rows
                 } catch(err) {
-                    console.error(err);
+                    console.error("Supabase Payload Error Context:", err);
                     alert("Error saving item to Supabase table schema.");
                 }
             }
@@ -902,14 +913,29 @@
         }
 
         function renderAdminVendorListUI() {
-            const container = document.getElementById('admin-vendor-list'); container.innerHTML = '';
+            const container = document.getElementById('admin-vendor-list'); 
+            container.innerHTML = '';
+            
             (window.cachedStalls || []).forEach(s => {
-                const div = document.createElement('div'); div.className = "vendor-row";
-                div.innerHTML = `<span>🏪 ${s.name} [${s.prefix}]</span> <button class="vendor-del-btn">Revoke</button>`;
-                div.querySelector('button').onclick = async () => {
-                    if(isSupabaseConfigured) await dbClient.from('stalls').delete().eq('prefix', s.prefix);
-                    await fetchOperationalStallData();
-                    renderAdminVendorListUI();
+                const div = document.createElement('div'); 
+                div.className = "vendor-row";
+                div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #f1f5f9;";
+                
+                div.innerHTML = `
+                    <span style="font-weight:500; color:#334155;">🏪 ${s.name} <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#64748b; font-size:0.8rem;">${s.prefix}</code></span> 
+                    <button class="vendor-del-btn" style="background:#ef4444; color:white; border:none; padding:6px 14px; border-radius:6px; font-weight:600; font-size:0.8rem; cursor:pointer; transition:all 0.2s ease-in-out; box-shadow:0 2px 4px rgba(239,68,68,0.2);">Revoke Access</button>
+                `;
+                
+                const btn = div.querySelector('.vendor-del-btn');
+                btn.onmouseover = () => { btn.style.background = '#dc2626'; btn.style.transform = 'translateY(-1px)'; };
+                btn.onmouseout = () => { btn.style.background = '#ef4444'; btn.style.transform = 'translateY(0)'; };
+                
+                btn.onclick = async () => {
+                    if(confirm(`Revoke authentication clearance permissions for ${s.name}?`)) {
+                        if(isSupabaseConfigured) await dbClient.from('stalls').delete().eq('prefix', s.prefix);
+                        await fetchOperationalStallData();
+                        renderAdminVendorListUI();
+                    }
                 };
                 container.appendChild(div);
             });
