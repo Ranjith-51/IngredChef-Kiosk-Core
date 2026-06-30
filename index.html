@@ -15,7 +15,7 @@
                 <img src="IngredChef_Logo.png" alt="IngredChef Brand Logo" style="width: 85%; height: 85%; object-fit: contain; display: block;">
             </div>
             <h2>Welcome to IngredChef Hub</h2>
-            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Workspace</p>
+            <p style="color:#7f8c8d; margin-bottom:25px; font-weight:600;">Choose Your Terminal Workspace</p>
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
@@ -113,7 +113,7 @@
                 <h1 style="color:white; margin:0; font-size:1.4rem;">IngredChef Kitchen Hub</h1>
             </div>
             <div style="display:flex; gap:15px; align-items:center;">
-                <button class="exit-workspace-btn" style="background:#34495e;" id="hub-to-kiosk-shortcut-btn">Go To Kiosk Kiosk 🛒</button>
+                <button class="exit-workspace-btn" style="background:#34495e;" id="hub-to-kiosk-shortcut-btn">Go To Kiosk 🛒</button>
                 <span id="active-session-identity" class="session-user-badge">Connecting Stream...</span>
             </div>
         </header>
@@ -269,7 +269,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // --- CENTRAL SUPABASE API KEY REGISTRATION (Fixed Base Path URL Construction) ---
+        // --- CENTRAL SUPABASE CONNECTIONS ENGINE ---
         const SUPABASE_PROJECT_URL = "https://fnbvyrkrgltcvpzmnxoo.supabase.co"; 
         const SUPABASE_PUBLIC_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnZ5cmtyZ2x0Y3Zwem1ueG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTY2MDksImV4cCI6MjA5ODAzMjYwOX0.fBGX_hu2PzPrsf50B7JiHgjJhWe8-Mviu08DVrhugAE"; 
         
@@ -286,14 +286,12 @@
             console.warn("Supabase initialization error:", e);
         }
 
-        // Shared Operations Memory Framework Runtime
+        // Shared Local Fallback Memory Frame System
         let cart = [];
         let activeCustomer = null;
         let foodCourtStalls = [];
         let globalCachedOrders = [];
         let activeUserSession = JSON.parse(sessionStorage.getItem('activeHubUser')) || null;
-        
-        // Runtime cache state container for intermediate tracking of payment cycles
         let currentStagingPayload = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -314,19 +312,19 @@
             document.getElementById('checkout-btn').addEventListener('click', initCheckoutPaymentSequence);
             document.getElementById('clear-kiosk-btn').addEventListener('click', resetKioskTerminalState);
             
-            // Modal overlay control bindings
+            // Modal overlays
             document.getElementById('close-modal-btn').addEventListener('click', () => document.getElementById('recipe-modal').classList.add('hidden'));
             document.getElementById('close-invoice-btn').addEventListener('click', resetKioskTerminalStateAndClose);
             document.getElementById('print-receipt-btn').addEventListener('click', () => window.print());
 
-            // Embedded Simulation Action Vectors 
+            // Simulation Action triggers
             document.getElementById('sim-cancel-pay-btn').addEventListener('click', () => {
                 document.getElementById('payment-gateway-overlay').classList.add('hidden');
-                alert("Transaction Cancelled from remote device link.");
+                alert("Transaction Cancelled.");
             });
             document.getElementById('sim-finalize-pay-btn').addEventListener('click', processRemotePaymentSuccessLoop);
 
-            // Kitchen Core Event Links
+            // Kitchen Core System Subscriptions
             document.getElementById('hub-logout-btn').addEventListener('click', terminateKitchenHubSession);
             document.getElementById('commit-add-stall-btn').addEventListener('click', registerNewVendorStall);
             document.getElementById('admin-wipe-logs-btn').addEventListener('click', adminClearGlobalDataLog);
@@ -334,7 +332,7 @@
             document.getElementById('add-addon-row-btn').addEventListener('click', addNewAddonInputRow);
             document.getElementById('menu-item-form').addEventListener('submit', commitNewCustomMenuItemForm);
 
-            // Category browsing logic binds
+            // Category browsing selector map loop
             document.querySelectorAll('.category-card').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.category-card').forEach(b => b.classList.remove('active'));
@@ -344,7 +342,6 @@
                 });
             });
 
-            // Populate system components configuration elements
             await fetchOperationalStallData();
             if (activeUserSession) {
                 document.getElementById('view-gateway').classList.add('hidden');
@@ -376,7 +373,7 @@
                 dbClient.channel('kiosk-view-sync').on('postgres_changes', { event: '*', table: 'orders' }, payload => {
                     if (payload.eventType === 'INSERT') globalCachedOrders.unshift(payload.new);
                     if (payload.eventType === 'UPDATE') {
-                        const idx = globalCachedOrders.findIndex(o => o.order_ref === payload.new.order_ref);
+                        const idx = globalCachedOrders.findIndex(o => o.orderId === payload.new.orderId);
                         if (idx !== -1) globalCachedOrders[idx] = payload.new;
                     }
                     updateHistoryDashboardUI();
@@ -408,21 +405,20 @@
             
             let combinedResults = [];
 
-            // Gather data out of PostgreSQL dishes table
             if (isSupabaseConfigured) {
                 try {
                     let { data } = await dbClient.from('dishes').select('*');
                     if (data) {
                         data.forEach(item => {
-                            if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
+                            if (item.category?.toLowerCase() === term.toLowerCase() || item.name?.toLowerCase().includes(term.toLowerCase())) {
                                 combinedResults.push({
                                     isCustom: true,
                                     idMeal: item.id,
                                     strMeal: item.name,
                                     strMealThumb: item.image_url || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
-                                    customCost: parseFloat(item.price),
+                                    customCost: parseFloat(item.price || 150),
                                     customStall: item.stall_prefix || "GLOBAL",
-                                    customAddons: item.addons || []
+                                    customAddons: Array.isArray(item.addons) ? item.addons : []
                                 });
                             }
                         });
@@ -430,7 +426,6 @@
                 } catch(e) { console.warn("Supabase dish index read error", e); }
             }
 
-            // Fallback recipes loop
             try {
                 let res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(term)}`);
                 let data = await res.json();
@@ -456,7 +451,7 @@
                         });
                     });
                 }
-            } catch { console.warn("External API network offline."); }
+            } catch { console.warn("External fallback lookup grid timed out."); }
 
             if (combinedResults.length === 0) return msg.textContent = "❌ Zero matches located. Try alternative categories.";
             msg.textContent = `🍟 Loaded ${combinedResults.length} listings for "${term}":`;
@@ -550,29 +545,22 @@
             const generatedToken = Math.floor(10 + Math.random() * 89);
             let total = 0;
             
-            const dynamicItemsMap = cart.map(c => {
+            const compiledLines = cart.map(c => {
                 total += c.unitPrice;
-                return {
-                    name: c.name,
-                    qty: c.quantity,
-                    price: c.unitPrice,
-                    stall: c.stallName,
-                    customizations: c.customizations
-                };
+                return `${c.name} (${c.stallName}) x${c.quantity}`;
             });
 
             currentStagingPayload = {
-                order_ref: orderRefCode,
-                token_number: generatedToken,
-                customer_name: activeCustomer.name,
-                customer_phone: activeCustomer.phone,
-                items: dynamicItemsMap,
-                total_amount: total,
-                order_status: 'COOKING'
+                orderId: orderRefCode,
+                tokenNumber: generatedToken,
+                customerName: activeCustomer.name,
+                customerPhone: activeCustomer.phone,
+                foodItems: compiledLines.join('<br>'),
+                grandTotal: total,
+                orderStatus: 'COOKING'
             };
 
             const simulatedWebGatewayUrl = `https://ingredchef-payments.vercel.app/pay?ref=${orderRefCode}&amt=${total}`;
-            
             const qrContainer = document.getElementById('qr-code-payload-render');
             qrContainer.innerHTML = '';
             new QRCode(qrContainer, {
@@ -590,23 +578,14 @@
             if (!currentStagingPayload) return;
             
             document.getElementById('payment-gateway-overlay').classList.add('hidden');
-            alert(`💳 Payment Verified Successfully!\nThank you, ${currentStagingPayload.customer_name}. Generating receipt...`);
+            alert(`💳 Payment Verified Successfully!\nThank you, ${currentStagingPayload.customerName}. Generating receipt...`);
 
             if (isSupabaseConfigured) {
                 try {
-                    const dbPayload = {
-                        order_ref: currentStagingPayload.order_ref,
-                        customer_name: currentStagingPayload.customer_name,
-                        customer_phone: currentStagingPayload.customer_phone,
-                        items: currentStagingPayload.items,
-                        total_amount: currentStagingPayload.total_amount,
-                        order_status: currentStagingPayload.order_status
-                    };
-                    const { error } = await dbClient.from('orders').insert([dbPayload]);
+                    const { error } = await dbClient.from('orders').insert([currentStagingPayload]);
                     if (error) throw error;
                 } catch(e) {
                     console.error("Supabase cloud ledger write aborted:", e);
-                    alert("Database notification pipeline error. Local recovery fallback execution triggered.");
                 }
             }
 
@@ -617,36 +596,24 @@
 
         function triggerModernReceiptBillLayout(order) {
             const body = document.getElementById('invoice-body');
-            
-            let itemLinesHTML = order.items.map(i => `
-                <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:6px; border-bottom:1px dashed #f1f5f9; padding-bottom:4px;">
-                    <div>
-                        <strong>${i.qty}x ${i.name}</strong> <small style="color:#7f8c8d;">(${i.stall})</small>
-                        ${i.customizations.length ? `<br><span style="font-size:0.75rem; color:#e67e22;">➔ ${i.customizations.join(', ')}</span>` : ''}
-                    </div>
-                    <div style="font-weight:600;">₹${i.price}</div>
-                </div>
-            `).join('');
-
             body.innerHTML = `
                 <div style="text-align:center; border-bottom:2px dashed #cbd5e1; padding-bottom:15px; margin-bottom:15px;">
                     <h2 style="margin:0; color:#2ecc71;">🎉 PAYMENT SUCCESS</h2>
                     <p style="margin:5px 0 0 0; color:#7f8c8d; font-size:0.85rem;">Thank you for your order!</p>
-                    <h1 style="font-size:4rem; margin:10px 0; color:#2c3e50; letter-spacing:2px;">#${order.token_number}</h1>
+                    <h1 style="font-size:4rem; margin:10px 0; color:#2c3e50; letter-spacing:2px;">#${order.tokenNumber}</h1>
                     <span style="font-size:0.75rem; background:#f1f5f9; padding:4px 10px; border-radius:12px; font-weight:bold; color:#475569;">KITCHEN DISPATCH TOKEN</span>
                 </div>
                 <div style="font-size:0.85rem; color:#475569; margin-bottom:15px; line-height:1.4;">
-                    <strong>Order Ref:</strong> <code>${order.order_ref}</code><br>
-                    <strong>Customer:</strong> ${order.customer_name} (${order.customer_phone})<br>
+                    <strong>Order Ref:</strong> <code>${order.orderId}</code><br>
+                    <strong>Customer:</strong> ${order.customerName} (${order.customerPhone})<br>
                     <strong>Date:</strong> ${new Date().toLocaleTimeString()}
                 </div>
-                <div style="margin:15px 0;">
-                    <h4 style="margin:0 0 10px 0; text-transform:uppercase; font-size:0.75rem; color:#94a3b8; letter-spacing:1px;">Order Summary</h4>
-                    ${itemLinesHTML}
+                <div style="margin:15px 0; padding:10px; background:#f8fafc; border-radius:6px; font-size:0.9rem;">
+                    ${order.foodItems}
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding-top:10px; border-top:2px dashed #cbd5e1;">
                     <span style="font-weight:bold; font-size:1.1rem; color:#1e293b;">Grand Total Paid:</span>
-                    <span style="font-size:1.5rem; font-weight:900; color:#e74c3c;">₹${order.total_amount}</span>
+                    <span style="font-size:1.5rem; font-weight:900; color:#e74c3c;">₹${order.grandTotal}</span>
                 </div>
             `;
             document.getElementById('invoice-modal').classList.remove('hidden');
@@ -667,8 +634,8 @@
             globalCachedOrders.slice(0,8).forEach((o) => {
                 const row = document.createElement('tr'); row.style.borderBottom = "1px solid #eee";
                 row.innerHTML = `<td style="padding:5px;">${o.created_at ? new Date(o.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : 'Paid'}</td>
-                                 <td style="padding:5px; font-weight:bold; color:#e67e22;">${o.order_ref}</td>
-                                 <td style="padding:5px; font-weight:bold;">₹${o.total_amount}</td>`;
+                                 <td style="padding:5px; font-weight:bold; color:#e67e22;">${o.orderId}</td>
+                                 <td style="padding:5px; font-weight:bold;">₹${o.grandTotal}</td>`;
                 body.appendChild(row);
             });
         }
@@ -695,15 +662,17 @@
                     if (data && data.length > 0) {
                         window.cachedStalls = data;
                     } else {
-                        window.cachedStalls = [{ name: "Global Main Kitchen", prefix: "GLOBAL", password: "123" }];
+                        window.cachedStalls = [{ name: "Global Main Kitchen", prefix: "GLOBAL", secret: "123" }];
                     }
                 } catch { 
-                    window.cachedStalls = [{ name: "Global Main Kitchen", prefix: "GLOBAL", password: "123" }]; 
+                    window.cachedStalls = [{ name: "Global Main Kitchen", prefix: "GLOBAL", secret: "123" }]; 
                 }
+            } else {
+                window.cachedStalls = [{ name: "Global Main Kitchen", prefix: "GLOBAL", secret: "123" }];
             }
-            foodCourtStalls = window.cachedStalls.map(s => s.prefix);
+            foodCourtStalls = window.cachedStalls.map(s => s.prefix || "GLOBAL");
             const select = document.getElementById('stall-selector');
-            if (select) select.innerHTML = '<option value="ALL">-- ALL SYSTEMS ONLINE --</option>' + window.cachedStalls.map(s => `<option value="${s.prefix}">${s.name}</option>`).join('');
+            if (select) select.innerHTML = '<option value="ALL">-- ALL SYSTEMS ONLINE --</option>' + window.cachedStalls.map(s => `<option value="${s.prefix || 'GLOBAL'}">${s.name}</option>`).join('');
         }
 
         function processKdsSecurityAccessCheck() {
@@ -716,9 +685,9 @@
                 finishAuthenticationRedirect();
                 return;
             }
-            const match = (window.cachedStalls || []).find(s => s.prefix.toLowerCase() === user.toLowerCase() && s.password === pass);
+            const match = (window.cachedStalls || []).find(s => (s.prefix || 'GLOBAL').toLowerCase() === user.toLowerCase() && s.secret === pass);
             if (match) {
-                activeUserSession = { username: match.name, prefix: match.prefix, role: "stall" };
+                activeUserSession = { username: match.name, prefix: match.prefix || 'GLOBAL', role: "stall" };
                 finishAuthenticationRedirect();
             } else {
                 errMsg.textContent = "Security verification rejected. Invalid credentials.";
@@ -743,10 +712,10 @@
                     dbClient.channel('kds-stream-sync').on('postgres_changes', { event: '*', table: 'orders' }, payload => {
                         if (payload.eventType === 'INSERT') globalCachedOrders.unshift(payload.new);
                         if (payload.eventType === 'UPDATE') {
-                            const idx = globalCachedOrders.findIndex(o => o.order_ref === payload.new.order_ref);
+                            const idx = globalCachedOrders.findIndex(o => o.orderId === payload.new.orderId);
                             if (idx !== -1) globalCachedOrders[idx] = payload.new;
                         }
-                        if (payload.eventType === 'DELETE') globalCachedOrders = globalCachedOrders.filter(o => o.order_ref !== payload.old.order_ref);
+                        if (payload.eventType === 'DELETE') globalCachedOrders = globalCachedOrders.filter(o => o.orderId !== payload.old.orderId);
                         renderKDSTicketsGrid();
                         if (activeUserSession?.role === 'admin') renderAdminHistoryTableUI();
                     }).subscribe();
@@ -799,7 +768,6 @@
             const price = parseFloat(document.getElementById('food-price').value.trim());
             const category = document.getElementById('food-category').value;
 
-            // Collect dynamic add-on modifications from the container rows
             const addonsArray = [];
             const addonRows = document.getElementById('addons-container').children;
             for (let row of addonRows) {
@@ -815,6 +783,7 @@
 
             if (isSupabaseConfigured) {
                 try {
+                    // Correct structural field alignment logic matching layout maps
                     const payload = {
                         name: name,
                         price: price,
@@ -828,11 +797,13 @@
                     if (error) throw error;
                     
                     alert("🎉 Delicacy Synchronized into Live Web Database successfully.");
-                    document.getElementById('addons-container').innerHTML = ''; // Clear dynamic rows
+                    document.getElementById('addons-container').innerHTML = '';
                 } catch(err) {
-                    console.error("Supabase Payload Error Context:", err);
+                    console.error("Supabase Database Payload Schema Error Context:", err);
                     alert("Error saving item to Supabase table schema.");
                 }
+            } else {
+                alert("Database engine link offline. Local memory configuration state saved.");
             }
             
             document.getElementById('menu-item-form').reset();
@@ -877,30 +848,26 @@
             pBox.innerHTML = ''; rBox.innerHTML = ''; let pC = 0, rC = 0;
 
             globalCachedOrders.forEach(order => {
-                const rawItems = Array.isArray(order.items) ? order.items : [];
-                const targetItems = rawItems.filter(i => filter === "ALL" || i.stall === filter);
-                if (targetItems.length === 0) return;
-
-                const isDone = order.order_status === 'READY';
+                const isDone = order.orderStatus === 'READY';
                 const card = document.createElement('div'); card.className = "kds-ticket";
                 card.style.borderLeft = `5px solid ${isDone ? '#2ecc71' : '#f1c40f'}`;
                 
                 card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#7f8c8d;"><strong>${order.order_ref}</strong></div>
-                    <h4 style="margin:5px 0;">👤 ${order.customer_name || 'Walk-In'}</h4>
-                    <ul style="padding-left:15px; margin:5px 0; font-size:0.85rem;">${targetItems.map(i => `<li><strong>${i.qty}x</strong> ${i.name}</li>`).join('')}</ul>
+                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#7f8c8d;"><strong>${order.orderId}</strong></div>
+                    <h4 style="margin:5px 0;">👤 ${order.customerName || 'Walk-In'}</h4>
+                    <div style="font-size:0.85rem; margin:5px 0; color:#34495e;">${order.foodItems}</div>
                     <button style="background:${isDone ? '#95a5a6' : '#2ecc71'}; color:white; border:none; width:100%; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer; margin-top:8px;">${isDone ? 'Archive Ticket' : 'Mark Completed'}</button>`;
                 
                 card.querySelector('button').onclick = async () => {
                     const nextStatus = isDone ? 'ARCHIVED' : 'READY';
                     if (isSupabaseConfigured) {
                         if (nextStatus === 'ARCHIVED') {
-                            await dbClient.from('orders').delete().eq('order_ref', order.order_ref);
+                            await dbClient.from('orders').delete().eq('orderId', order.orderId);
                         } else {
-                            await dbClient.from('orders').update({ order_status: nextStatus }).eq('order_ref', order.order_ref);
+                            await dbClient.from('orders').update({ orderStatus: nextStatus }).eq('orderId', order.orderId);
                         }
                     } else {
-                        globalCachedOrders = globalCachedOrders.filter(o => o.order_ref !== order.order_ref);
+                        globalCachedOrders = globalCachedOrders.filter(o => o.orderId !== order.orderId);
                     }
                     renderKDSTicketsGrid();
                 };
@@ -922,7 +889,7 @@
                 div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #f1f5f9;";
                 
                 div.innerHTML = `
-                    <span style="font-weight:500; color:#334155;">🏪 ${s.name} <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#64748b; font-size:0.8rem;">${s.prefix}</code></span> 
+                    <span style="font-weight:500; color:#334155;">🏪 ${s.name} <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#64748b; font-size:0.8rem;">${s.prefix || 'GLOBAL'}</code></span> 
                     <button class="vendor-del-btn" style="background:#ef4444; color:white; border:none; padding:6px 14px; border-radius:6px; font-weight:600; font-size:0.8rem; cursor:pointer; transition:all 0.2s ease-in-out; box-shadow:0 2px 4px rgba(239,68,68,0.2);">Revoke Access</button>
                 `;
                 
@@ -932,7 +899,7 @@
                 
                 btn.onclick = async () => {
                     if(confirm(`Revoke authentication clearance permissions for ${s.name}?`)) {
-                        if(isSupabaseConfigured) await dbClient.from('stalls').delete().eq('prefix', s.prefix);
+                        if(isSupabaseConfigured) await dbClient.from('stalls').delete().eq('name', s.name);
                         await fetchOperationalStallData();
                         renderAdminVendorListUI();
                     }
@@ -946,10 +913,10 @@
             globalCachedOrders.forEach(o => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td style="padding:8px;">Just Now</td>
-                                <td style="padding:8px;"><code>${o.order_ref}</code></td>
-                                <td style="padding:8px;"><strong>${o.customer_name}</strong></td>
-                                <td style="padding:8px; font-size:0.75rem;">Status Flag: ${o.order_status}</td>
-                                <td style="padding:8px; font-weight:bold;">₹${o.total_amount}</td>`;
+                                <td style="padding:8px;"><code>${o.orderId}</code></td>
+                                <td style="padding:8px;"><strong>${o.customerName}</strong></td>
+                                <td style="padding:8px; font-size:0.75rem;">Status Flag: ${o.orderStatus}</td>
+                                <td style="padding:8px; font-weight:bold;">₹${o.grandTotal}</td>`;
                 table.appendChild(tr);
             });
         }
@@ -960,13 +927,14 @@
             if (!name || !secret) return alert("Fill fields completely.");
             
             const generatedPrefix = name.replace(/\s+/g, '').toUpperCase().substring(0, 5);
+            window.cachedStalls.push({ name, prefix: generatedPrefix, secret });
 
             if (isSupabaseConfigured) {
                 try { 
-                    const { error } = await dbClient.from('stalls').insert([{ name: name, prefix: generatedPrefix, password: secret }]); 
+                    const { error } = await dbClient.from('stalls').insert([{ name: name, prefix: generatedPrefix, secret: secret }]); 
                     if(error) throw error;
                 } catch(e){
-                    return alert("Failed to save vendor to Supabase.");
+                    return alert("Failed to save vendor to database.");
                 }
             }
             document.getElementById('new-stall-name').value = '';
@@ -978,7 +946,7 @@
         async function adminClearGlobalDataLog() {
             if (confirm("Permanently purge operational history records from Supabase?")) {
                 if (isSupabaseConfigured) {
-                    try { await dbClient.from('orders').delete().neq('order_status', 'WIPE_CMD_STUB'); } catch(e){}
+                    try { await dbClient.from('orders').delete().neq('orderStatus', 'WIPE_CMD'); } catch(e){}
                 }
                 globalCachedOrders = []; 
                 renderKDSTicketsGrid(); 
