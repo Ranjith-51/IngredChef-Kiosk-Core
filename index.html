@@ -153,6 +153,18 @@
                         </div>
                     </div>
 
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:15px; margin-bottom:15px; align-items:start;">
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Item Image URL</label>
+                            <input type="url" id="food-image-url" placeholder="https://example.com/dish-photo.jpg" class="form-input" style="margin:0;">
+                            <small style="color:#7f8c8d; font-size:0.7rem;">Paste a direct image link. Leave blank to use a default placeholder photo.</small>
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.85rem; display:block; margin-bottom:4px;">Preview</label>
+                            <img id="food-image-preview" src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300" style="width:100%; height:70px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+                        </div>
+                    </div>
+
                     <div style="background:#f4f6f7; padding:15px; border-radius:6px; margin-bottom:15px;">
                         <h4 style="margin:0 0 10px 0; font-size:0.85rem; color:#34495e;">⚡ Custom Modifications & Add-ons Builder</h4>
                         <div id="addons-container" style="display:flex; flex-direction:column; gap:8px;"></div>
@@ -167,6 +179,7 @@
                     <table style="width:100%; border-collapse:collapse; font-size:0.85rem; background:white; border:1px solid #ddd;">
                         <thead style="background:#f2f4f4;">
                             <tr>
+                                <th style="padding:8px; border:1px solid #ddd; text-align:center;">Image</th>
                                 <th style="padding:8px; border:1px solid #ddd; text-align:left;">Item Label</th>
                                 <th style="padding:8px; border:1px solid #ddd; text-align:left;">Category</th>
                                 <th style="padding:8px; border:1px solid #ddd; text-align:left;">Base Cost</th>
@@ -321,6 +334,10 @@
             document.getElementById('stall-selector').addEventListener('change', () => renderKDSTicketsGrid());
             document.getElementById('add-addon-row-btn').addEventListener('click', addNewAddonInputRow);
             document.getElementById('menu-item-form').addEventListener('submit', commitNewCustomMenuItemForm);
+            document.getElementById('food-image-url').addEventListener('input', () => {
+                const url = document.getElementById('food-image-url').value.trim();
+                document.getElementById('food-image-preview').src = url || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
+            });
 
             // Password visibility toggle bindings
             document.querySelectorAll('.pw-toggle-btn').forEach(btn => {
@@ -417,7 +434,7 @@
                             isCustom: true,
                             idMeal: item.id,
                             strMeal: item.name,
-                            strMealThumb: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
+                            strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
                             customCost: item.price,
                             customStall: stallName,
                             customAddons: item.addons || []
@@ -744,6 +761,7 @@
             const name = document.getElementById('food-name').value.trim();
             const price = document.getElementById('food-price').value.trim();
             const category = document.getElementById('food-category').value;
+            const imageUrl = document.getElementById('food-image-url').value.trim() || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
             
             const addonNames = document.querySelectorAll('.addon-name-input');
             const addonPrices = document.querySelectorAll('.addon-price-input');
@@ -766,6 +784,7 @@
                 name,
                 price,
                 category,
+                image: imageUrl,
                 addons: parsedAddons
             });
 
@@ -773,6 +792,7 @@
             
             document.getElementById('menu-item-form').reset();
             document.getElementById('addons-container').innerHTML = '';
+            document.getElementById('food-image-preview').src = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
             renderStallSpecificInventoryTable(activeUserSession.username);
         }
 
@@ -782,15 +802,17 @@
             const items = globalStallMenus[stallName] || [];
 
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom delicacies published by this station node yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:#aaa; font-style:italic;">No custom delicacies published by this station node yet.</td></tr>`;
                 return;
             }
 
             items.forEach(item => {
                 const tr = document.createElement('tr');
                 let addonsChips = item.addons.map(a => `<span style="display:inline-block; font-size:0.7rem; background:#ebf5fb; color:#2980b9; padding:2px 6px; border-radius:4px; margin-right:4px;">${a.name} (+₹${a.price})</span>`).join('');
+                const thumb = item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
                 
                 tr.innerHTML = `
+                    <td style="padding:6px; border:1px solid #ddd; text-align:center;"><img src="${thumb}" style="width:44px; height:44px; object-fit:cover; border-radius:6px;"></td>
                     <td style="padding:8px; border:1px solid #ddd; font-weight:bold;">${item.name}</td>
                     <td style="padding:8px; border:1px solid #ddd;"><span class="stall-tag" style="background:#34495e;">${item.category}</span></td>
                     <td style="padding:8px; border:1px solid #ddd; font-weight:bold; color:#e74c3c;">₹${item.price}</td>
