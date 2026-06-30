@@ -819,18 +819,34 @@
         function updateHistoryDashboardUI() {
             const body = document.getElementById('history-log-table-body');
             body.innerHTML = '';
+    
             if (!globalCachedOrders || !globalCachedOrders.length) {
                 body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px; color:#7f8c8d;">No historical tokens.</td></tr>';
                 return;
             }
-            globalCachedOrders.slice(0,8).forEach(o => {
+    
+            // Deduplicate on-the-fly by tracking unique Order IDs to prevent double rendering
+            const renderedOrderIds = new Set();
+            let displayCount = 0;
+        
+            for (let i = 0; i < globalCachedOrders.length; i++) {
+                const o = globalCachedOrders[i];
+                if (!o || renderedOrderIds.has(o.orderId)) continue; // Skip duplicates
+                
+                renderedOrderIds.add(o.orderId);
+                displayCount++;
+        
                 const row = document.createElement('tr');
                 row.style.borderBottom = "1px solid #eee";
-                row.innerHTML = `<td style="padding:5px;">${new Date(o.epochIssued).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td>
-                                 <td style="padding:5px; font-weight:bold; color:#e67e22;">#${o.tokenNumber}</td>
-                                 <td style="padding:5px; font-weight:bold;">₹${o.grandTotal}</td>`;
+                row.innerHTML = `
+                    <td style="padding:5px; color:#64748b;">${new Date(o.epochIssued).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td>
+                    <td style="padding:5px; font-weight:bold; color:#e67e22;">#${o.tokenNumber}</td>
+                    <td style="padding:5px; font-weight:bold; color:#2c3e50;">₹${o.grandTotal}</td>
+                `;
                 body.appendChild(row);
-            });
+        
+                if (displayCount >= 8) break; // Keep the same display limit constraint
+            }
         }
 
         function resetKioskTerminalState() {
