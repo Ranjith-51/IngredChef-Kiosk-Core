@@ -128,12 +128,6 @@
             
             <!-- 🛠️ MERCHANDISE MENU MANAGER (Visible only to authenticated individual stalls) -->
             <section id="stall-menu-manager" class="admin-dashboard hidden" style="background: white; border-color: #3498db;">
-                <div class="sales-panel">
-                    <h3>
-                        💰 Total Sales :
-                    ₹<span id="stall-sales-total">0</span>
-                    </h3>
-                </div>
                 <h3 style="color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 5px;">📋 Isolated Menu Customizer Portal</h3>
                 <p id="current-stall-display" style="font-weight: bold; color: #7f8c8d; font-size: 0.9rem; margin-bottom: 15px;"></p>
                 
@@ -206,26 +200,6 @@
             <!-- ADMIN BACKOFFICE OPTIONS PANEL -->
             <section id="central-admin-view" class="admin-dashboard hidden">
                 <h2 style="color: #2c3e50; border-bottom:3px solid #34495e; padding-bottom:8px; margin-top:0;">💎 System Master Control Node</h2>
-                <div class="admin-sales-container">
-
-    <h3>📊 Outlet Sales Dashboard</h3>
-
-    <table class="inventory-table">
-
-        <thead>
-            <tr>
-                <th>Outlet</th>
-                <th>Total Sales</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-
-        <tbody id="admin-sales-body">
-        </tbody>
-
-    </table>
-
-</div>
                 <div class="vendor-manager-grid">
                     <div style="background:white; padding:20px; border-radius:8px; border:1px solid #e2e8f0;">
                         <h4 style="margin-top:0; color:#34495e;">🏬 Provision New Stall Panel</h4>
@@ -966,232 +940,62 @@
         }
 
         async function commitNewCustomMenuItemForm(e) {
+            e.preventDefault();
+            if (!activeUserSession || activeUserSession.role !== 'stall') return;
 
-    e.preventDefault();
+            const name = document.getElementById('food-name').value.trim();
+            const price = document.getElementById('food-price').value.trim();
+            const category = document.getElementById('food-category').value;
+            const imageUrl = document.getElementById('food-image-url').value.trim() || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
+            
+            const addonNames = document.querySelectorAll('.addon-name-input');
+            const addonPrices = document.querySelectorAll('.addon-price-input');
+            let parsedAddons = [];
 
-    if (!activeUserSession || activeUserSession.role !== 'stall')
-        return;
-
-    const name =
-        document.getElementById('food-name')
-        .value.trim();
-
-    const price =
-        Number(
-            document.getElementById('food-price')
-            .value.trim()
-        );
-
-    const category =
-        document.getElementById('food-category')
-        .value;
-
-    const imageUrl =
-        document.getElementById('food-image-url')
-        .value.trim() ||
-        "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
-
-    const addonNames =
-        document.querySelectorAll(
-            '.addon-name-input'
-        );
-
-    const addonPrices =
-        document.querySelectorAll(
-            '.addon-price-input'
-        );
-
-    let parsedAddons = [];
-
-    addonNames.forEach((input,index)=>{
-
-        const aName =
-            input.value.trim();
-
-        const aPrice =
-            Number(
-                addonPrices[index]
-                .value || 0
-            );
-
-        if(aName){
-
-            parsedAddons.push({
-                name:aName,
-                price:aPrice
+            addonNames.forEach((input, index) => {
+                const aName = input.value.trim();
+                const aPrice = addonPrices[index].value.trim() || "0";
+                if (aName) {
+                    parsedAddons.push({ name: aName, price: aPrice });
+                }
             });
-        }
-    });
 
-    const stallName =
-        activeUserSession.username;
+            const stallName = activeUserSession.username;
+            const itemId = editingDishId || ('custom-item-' + Date.now());
+            const dishRecord = { itemId, stallName, name, price, category, image: imageUrl, addons: parsedAddons };
 
-    const itemId =
-        editingDishId ||
-        ('custom-item-' + Date.now());
-
-    const dishRecord = {
-
-        itemId:String(itemId),
-        stallName:String(stallName),
-        name:String(name),
-        price:Number(price),
-        category:String(category),
-        image:String(imageUrl),
-
-        addons:
-            JSON.parse(
-                JSON.stringify(
-                    parsedAddons
-                )
-            )
-    };
-
-    console.log(
-        "Sending dish:",
-        dishRecord
-    );
-
-    if(isSupabaseConfigured){
-
-        try{
-
-            let response;
-
-            if(editingDishId){
-
-                response =
-                    await dbClient
-                    .from('dishes')
-                    .update(dishRecord)
-                    .eq(
-                        'itemId',
-                        editingDishId
-                    );
-
-            }else{
-
-                response =
-                    await dbClient
-                    .from('dishes')
-                    .insert([
-                        dishRecord
-                    ]);
+            if (isSupabaseConfigured) {
+                try {
+                    const { error } = editingDishId
+                        ? await dbClient.from('dishes').update(dishRecord).eq('itemId', editingDishId)
+                        : await dbClient.from('dishes').insert([dishRecord]);
+                    if (error) {
+                        alert("Failed to save dish to database: " + error.message);
+                        console.error("Supabase dish save error:", error);
+                        return;
+                    }
+                } catch (err) {
+                    alert("Failed to save dish to database: " + err.message);
+                    console.error("Supabase dish save exception:", err);
+                    return;
+                }
+            } else {
+                if (!globalStallMenus[stallName]) globalStallMenus[stallName] = [];
+                if (editingDishId) {
+                    const idx = globalStallMenus[stallName].findIndex(i => i.id === editingDishId);
+                    if (idx !== -1) globalStallMenus[stallName][idx] = { id: itemId, name, price, category, image: imageUrl, addons: parsedAddons };
+                } else {
+                    globalStallMenus[stallName].push({ id: itemId, name, price, category, image: imageUrl, addons: parsedAddons });
+                }
+                localStorage.setItem('globalStallMenus', JSON.stringify(globalStallMenus));
             }
 
-            if(response.error){
-
-                console.error(
-                    response.error
-                );
-
-                alert(
-                    "Failed to save dish to database:\n\n"+
-                    response.error.message+
-                    "\n\n"+
-                    JSON.stringify(
-                        response.error,
-                        null,
-                        2
-                    )
-                );
-
-                return;
-            }
-
-        }catch(err){
-
-            console.error(err);
-
-            alert(
-                "Database error:\n"+
-                err.message
-            );
-
-            return;
+            exitDishEditMode();
+            document.getElementById('menu-item-form').reset();
+            document.getElementById('addons-container').innerHTML = '';
+            document.getElementById('food-image-preview').src = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
+            await fetchDishesForStall(stallName);
         }
-
-    }else{
-
-        if(!globalStallMenus[stallName])
-            globalStallMenus[
-                stallName
-            ]=[];
-
-        if(editingDishId){
-
-            const idx =
-                globalStallMenus[
-                    stallName
-                ]
-                .findIndex(
-                    i=>i.id===
-                    editingDishId
-                );
-
-            if(idx!==-1){
-
-                globalStallMenus[
-                    stallName
-                ][idx]={
-
-                    id:itemId,
-                    name,
-                    price,
-                    category,
-                    image:imageUrl,
-                    addons:parsedAddons
-                };
-            }
-
-        }else{
-
-            globalStallMenus[
-                stallName
-            ].push({
-
-                id:itemId,
-                name,
-                price,
-                category,
-                image:imageUrl,
-                addons:parsedAddons
-            });
-        }
-
-        localStorage.setItem(
-            'globalStallMenus',
-            JSON.stringify(
-                globalStallMenus
-            )
-        );
-    }
-
-    exitDishEditMode();
-
-    document
-        .getElementById(
-            'menu-item-form'
-        )
-        .reset();
-
-    document
-        .getElementById(
-            'addons-container'
-        )
-        .innerHTML='';
-
-    document
-        .getElementById(
-            'food-image-preview'
-        )
-        .src=
-        "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300";
-
-    await fetchDishesForStall(
-        stallName
-    );
-}
 
         function populateFormForEdit(item) {
             editingDishId = item.id;
