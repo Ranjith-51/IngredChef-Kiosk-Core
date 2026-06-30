@@ -1096,7 +1096,7 @@
             });
 
             const itemId = editingDishId ? editingDishId : 'dish-' + Date.now();
-            const dishRecord = { itemId, stallName, name, price, category, image: imageUrl || null, addons: parsedAddons };
+            const dishRecord = { itemId, stallName, name, price, category, image_url: imageUrl, addons: parsedAddons };
 
             if (isSupabaseConfigured) {
                 try {
