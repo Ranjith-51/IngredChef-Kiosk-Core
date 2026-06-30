@@ -133,3 +133,53 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
         visibility: hidden !important;
     }
 }
+
+/* ============================================================
+   🍳 KDS TICKET STREAM BUTTON MODERNIZATION WRAPPERS
+============================================================ */
+.ticket-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* Modernizing the Interactive "Mark Ready" Button State */
+.ticket-btn.action-ready {
+    background-color: #3498db;
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+}
+
+.ticket-btn.action-ready:hover {
+    background-color: #2980b9;
+}
+
+.ticket-btn.action-ready:active {
+    transform: scale(0.98);
+}
+
+/* Modernizing the Interactive "Dismiss Ticket" Button State */
+.ticket-btn.action-dismiss {
+    background-color: #e74c3c;
+    color: white;
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.2);
+}
+
+.ticket-btn.action-dismiss:hover {
+    background-color: #c0392b;
+}
+
+.ticket-btn.action-dismiss:active {
+    transform: scale(0.98);
+}
