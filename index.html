@@ -18,6 +18,8 @@
             
             <button id="gate-to-customer-btn" class="gate-btn customer-btn">🛒 Customer Ordering Kiosk</button>
             <button id="gate-to-kitchen-btn" class="gate-btn kitchen-btn">🍳 Kitchen Display System (KDS)</button>
+            <!-- New Ticket Dispatch Shortcut Button Added Below -->
+            <button id="gate-to-dispatch-btn" class="gate-btn kitchen-btn" style="background:#e67e22; margin-top: 10px;">📋 Kitchen Ticket Stream Dispatch Engine</button>
             <p style="font-size:0.75rem; color:#bdc3c7; margin-top:20px;">Connected to Supabase WebSocket Pipeline</p>
         </div>
     </div>
@@ -374,6 +376,23 @@
                 clearKdsAuthInputs();
                 document.getElementById('kds-auth-screen').classList.remove('hidden');
             });
+            
+            // New Event Binder: Open Ticket Dispatch Directly from Dashboard
+            document.getElementById('gate-to-dispatch-btn').addEventListener('click', () => {
+                activeUserSession = { username: "Global Dispatch Stream", role: "view_only" };
+                document.getElementById('view-gateway').classList.add('hidden');
+                document.getElementById('view-kitchen-hub').classList.remove('hidden');
+                
+                // Keep only the Live Ticket View visible, isolate the admin/stall config boards
+                document.getElementById('kitchen-display-view').classList.remove('hidden');
+                document.getElementById('stall-menu-manager').classList.add('hidden');
+                document.getElementById('central-admin-view').classList.add('hidden');
+                document.getElementById('active-session-identity').textContent = `📺 Live Dispatch Feed`;
+                document.getElementById('stall-selector').disabled = false;
+                
+                establishKitchenRealtimeSocketPipe();
+            });
+
             document.getElementById('auth-cancel-btn').addEventListener('click', () => {
                 clearKdsAuthInputs();
                 document.getElementById('kds-auth-screen').classList.add('hidden');
@@ -980,7 +999,7 @@
                 document.getElementById('stall-selector').disabled = false;
                 renderAdminVendorListUI();
                 renderAdminHistoryTableUI();
-            } else {
+            } else if (activeUserSession.role === 'stall') {
                 document.getElementById('central-admin-view').classList.add('hidden');
                 menuManager.classList.remove('hidden');
                 currentStallText.innerHTML = `Connected Node Workspace: <strong>${activeUserSession.username}</strong>`;
@@ -1211,7 +1230,7 @@
         // KDS TICKET SCREEN GENERATORS
         // ==========================================
         function renderKDSTicketsGrid() {
-            const filter = activeUserSession?.role === 'admin' ? document.getElementById('stall-selector').value : activeUserSession?.username;
+            const filter = activeUserSession?.role === 'stall' ? activeUserSession?.username : document.getElementById('stall-selector').value;
             const pBox = document.getElementById('queue-pending');
             const rBox = document.getElementById('queue-ready');
             if(!pBox || !rBox) return;
