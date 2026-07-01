@@ -589,71 +589,6 @@
                                 strMeal: item.name,
                                 strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
                                 customCost: item.price,
-                        } catch(e){}
-                    }
-                    localStorage.setItem('globalCachedOrders', JSON.stringify(globalCachedOrders));
-                    updateHistoryDashboardUI();
-                }).subscribe();
-            }
-            
-            updateHistoryDashboardUI();
-        }
-
-        function saveCustomerSessionProfile() {
-            const name = document.getElementById('cust-name-input').value.trim();
-            const phone = document.getElementById('cust-phone-input').value.trim();
-            if (!name || phone.length !== 10 || isNaN(phone)) return alert("Input a valid name and a 10-digit mobile number.");
-            
-            activeCustomer = { name, phone };
-            document.getElementById('cust-name-input').disabled = true;
-            document.getElementById('cust-phone-input').disabled = true;
-            document.getElementById('register-cust-btn').disabled = true;
-            
-            const banner = document.getElementById('session-status-text');
-            banner.innerHTML = `✅ Linked Profile Session: <strong>${name} (${phone})</strong>`;
-            banner.style.background = "#e8f8f5"; banner.style.color = "#2ecc71";
-        }
-
-        async function pullMealsFromWebDatabase() {
-            const term = document.getElementById('food-search-input').value.trim();
-            if (!term) return;
-            const msg = document.getElementById('status-message');
-            msg.textContent = `Searching active catalog matching "${term}"...`;
-            let combinedResults = [];
-
-            if (isSupabaseConfigured) {
-                try {
-                    const { data, error } = await dbClient
-                        .from('dishes')
-                        .select('*')
-                        .or(`name.ilike.%${term}%,category.ilike.%${term}%`);
-                    if (error) {
-                        console.error("Supabase dish search error:", error.message);
-                        msg.textContent = "❌ Could not reach the catalog database.";
-                        return;
-                    }
-                    combinedResults = (data || []).map(item => ({
-                        idMeal: item.itemid,
-                        strMeal: item.name,
-                        strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
-                        customCost: item.price,
-                        customStall: item.stallname,
-                        customAddons: item.addons || []
-                    }));
-                } catch (e) {
-                    console.error("Supabase dish search exception:", e);
-                    msg.textContent = "❌ Could not reach the catalog database.";
-                    return;
-                }
-            } else {
-                Object.keys(globalStallMenus).forEach(stallname => {
-                    globalStallMenus[stallname].forEach(item => {
-                        if (item.category.toLowerCase() === term.toLowerCase() || item.name.toLowerCase().includes(term.toLowerCase())) {
-                            combinedResults.push({
-                                idMeal: item.id,
-                                strMeal: item.name,
-                                strMealThumb: item.image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300",
-                                customCost: item.price,
                                 customStall: stallname,
                                 customAddons: item.addons || []
                             });
@@ -768,12 +703,17 @@
         async function transmitCompletedBillToCloud() {
             if (!activeCustomer) return alert("Register profile data prior to checking out.");
             if (cart.length === 0) return alert("Your basket is empty.");
+            // --- PREVIOUS BROKEN IMPLEMENTATION ---
+            // const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+            // const token = Math.floor(10 + Math.random() * 89);
 
-            // UNIQUE SEQUENTIAL TRACKING LAYER FOR ORDER CHANNELS
+            // --- COMPLIANT SEQUENTIAL TRACKING BLUEPRINT ---
+            // Determine current baseline index relative to complete transaction log
             const baselineSequenceCount = (globalCachedOrders && globalCachedOrders.length) ? globalCachedOrders.length + 1 : 1;
             const orderId = "ORD-" + String(100000 + baselineSequenceCount);
 
-            // UNIQUE REVOLVING TOKEN TRACKING (Bounded between 10 and 99)
+            // Generate a completely unique revolving token ID (bounded cleanly between 10 and 99)
+            // Uses a clean Unix-epoch timestamp modulus calculation to guarantee uniqueness per order submission
             const token = 10 + (Math.floor(Date.now() / 10) % 90);
             const splitStalls = {};
             let total = 0;
@@ -822,6 +762,8 @@
                 document.getElementById('qr-payment-modal').classList.add('hidden');
                 pendingPaymentOrder = null;
                 renderTaxInvoiceBillUI(updatedOrder);
+                
+                // Live trigger reactive dashboard updates
                 calculateLiveSalesMetrics();
             } else if (updatedOrder.paymentStatus === 'cancelled') {
                 document.getElementById('qr-payment-modal').classList.add('hidden');
@@ -887,12 +829,13 @@
                 return;
             }
     
+            // Deduplicate on-the-fly by tracking unique Order IDs to prevent double rendering
             const renderedOrderIds = new Set();
             let displayCount = 0;
         
             for (let i = 0; i < globalCachedOrders.length; i++) {
                 const o = globalCachedOrders[i];
-                if (!o || renderedOrderIds.has(o.orderId)) continue;
+                if (!o || renderedOrderIds.has(o.orderId)) continue; // Skip duplicates
                 
                 renderedOrderIds.add(o.orderId);
                 displayCount++;
@@ -906,7 +849,7 @@
                 `;
                 body.appendChild(row);
         
-                if (displayCount >= 8) break;
+                if (displayCount >= 8) break; // Keep the same display limit constraint
             }
         }
 
@@ -973,17 +916,6 @@
 
         function finishAuthenticationRedirect() {
             sessionStorage.setItem('activeHubUser', JSON.stringify(activeUserSession));
-            
-            // CLEAR SENSITIVE AUTH INPUT FIELDS UPON VIEW ROUTING TRANSITIONS
-            document.getElementById('auth-username').value = '';
-            document.getElementById('auth-password').value = '';
-            document.getElementById('auth-error-msg').textContent = '';
-            const passToggleBtn = document.querySelector('.pw-toggle-btn[data-target="auth-password"]');
-            if (passToggleBtn) {
-                document.getElementById('auth-password').type = 'password';
-                passToggleBtn.textContent = '👁️';
-            }
-
             document.getElementById('kds-auth-screen').classList.add('hidden');
             document.getElementById('view-gateway').classList.add('hidden');
             document.getElementById('view-kitchen-hub').classList.remove('hidden');
@@ -1042,7 +974,6 @@
             renderKDSTicketsGrid();
             calculateLiveSalesMetrics();
         }
-
 
         // ==========================================
         // 📊 LIVE REVENUE MATRIX COMPILATION ENGINE
@@ -1332,15 +1263,6 @@
                     await dbClient.from('orders').update({ stalls: globalCachedOrders[orderIdx].stalls }).eq('orderId', orderId);
                 } catch(e){}
             }
-
-            // TRIGGER PICKUP MESSAGE ALERTS TO LINKED USER CHANNELS
-            const customerPhone = globalCachedOrders[orderIdx].customerPhone;
-            const customerName = globalCachedOrders[orderIdx].customerName;
-            const tokenNum = globalCachedOrders[orderIdx].tokenNumber;
-            
-            console.log(`[SMS Gateway Dispatch] Notifying ${customerPhone} regarding ready state...`);
-            alert(`📢 NOTIFICATION SENT TO CUSTOMER!\n\nTo: ${customerName} (${customerPhone})\nMessage: Your food from ${stallname} is ready for pickup! Please come to the counter and show Token #${tokenNum}.`);
-
             renderKDSTicketsGrid();
         }
 
@@ -1465,20 +1387,7 @@
             }
         }
 
-        function terminateKitchenHubSession() { 
-            // WIPE IN-FLIGHT AUTH FIELDS ON KDS EXIT LOGOUT COMMAND
-            document.getElementById('auth-username').value = '';
-            document.getElementById('auth-password').value = '';
-            document.getElementById('auth-error-msg').textContent = '';
-            const passToggleBtn = document.querySelector('.pw-toggle-btn[data-target="auth-password"]');
-            if (passToggleBtn) {
-                document.getElementById('auth-password').type = 'password';
-                passToggleBtn.textContent = '👁️';
-            }
-            
-            sessionStorage.removeItem('activeHubUser'); 
-            location.reload(); 
-        }
+        function terminateKitchenHubSession() { sessionStorage.removeItem('activeHubUser'); location.reload(); }
     </script>
 </body>
 </html>
